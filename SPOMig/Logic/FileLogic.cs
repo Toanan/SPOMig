@@ -29,7 +29,7 @@ namespace SPOMig
         public List<FileInfo> getFiles()
         {
             //We retrieve the sub dirinfos
-            List<DirectoryInfo> sourceFolders = getSourceFolders(LocalPath);
+            List<DirectoryInfo> sourceFolders = getSourceFolders();
 
             //We create the files fileinfo object
             List<FileInfo> files = new List<FileInfo>();
@@ -50,14 +50,14 @@ namespace SPOMig
         /// Retrive items from local directory
         /// </summary>
         /// <param name="url"></param>
-        private List<DirectoryInfo> getSourceFolders(string path)
+        public List<DirectoryInfo> getSourceFolders()
         {
             // TODO ADD the root directory !!
-            string[] Folders = Directory.GetDirectories(path, "*.*", SearchOption.AllDirectories);
+            string[] Folders = Directory.GetDirectories(LocalPath, "*.*", SearchOption.AllDirectories);
             //We create the list to put all directories
             List<DirectoryInfo> folders = new List<DirectoryInfo>();
             //We create the source rootFolder DirInfo and add it to the top of the list
-            DirectoryInfo rootFolder = new DirectoryInfo(path);
+            DirectoryInfo rootFolder = new DirectoryInfo(LocalPath);
             folders.Add(rootFolder);
 
             //We loop to populate directory info from directory path

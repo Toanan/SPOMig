@@ -34,17 +34,61 @@ namespace SPOMig
             return Libraries;
         }
 
-        public void copyFileToSPO(string libName, List<FileInfo> files)
+        public void copyFileToSPO(FileInfo file, List list, string localPath)
         {
-            List list = Context.Web.Lists.GetByTitle(libName);
-            Context.Load(list.RootFolder);
-            Context.ExecuteQuery();
-            foreach (FileInfo file in files)
+            using (FileStream fileStream = new FileStream(file.FullName, FileMode.Open))
             {
-                using (FileStream fileStream = new FileStream(file.FullName, FileMode.Open))
+                string libURL = list.RootFolder.ServerRelativeUrl.ToString();
+                string localPathNormalized = localPath.Replace("/", "\\");
+                string filePath = file.FullName.Replace("/", "\\");
+                string fileNormalizedPath = filePath.Replace(localPathNormalized, "");
+                string fileNormalizedPathfinal = fileNormalizedPath.Replace("\\", "/");
+                string serverRelativeURL = libURL + "/" + fileNormalizedPathfinal;
+
+ 
+
+                Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, true);
+            }
+        }
+
+        public void copyFolderToSPO (DirectoryInfo folder, List list, string localPath)
+        {
+            string localPathNormalized = localPath.Replace("/", "\\");
+            string folderPath = folder.FullName.Replace("/", "\\");
+            string folderPathNormalized = folderPath.Replace(localPathNormalized, "");
+            string folderPathNormalizedFinal = folderPathNormalized.Replace("\\", "/");
+            if (folderPathNormalizedFinal == "") return;
+
+            if (checkItemExist(folderPathNormalizedFinal) == false)
+            {
+                //To create the folder
+                ListItemCreationInformation itemCreateInfo = new ListItemCreationInformation();
+                itemCreateInfo.UnderlyingObjectType = FileSystemObjectType.Folder;
+                itemCreateInfo.LeafName = folderPathNormalizedFinal;
+
+                ListItem newItem = list.AddItem(itemCreateInfo);
+                newItem["Title"] = folderPathNormalizedFinal;
+                newItem.Update();
+                Context.ExecuteQuery();
+            }   
+        }
+
+        private bool checkItemExist (string itemPath)
+        {
+            try
+            {
+                ListItem folderToCheck = Context.Web.GetListItem(itemPath);
+                Context.Load(folderToCheck);
+                Context.ExecuteQuery();
+                return true;
+            }
+            catch (ServerException ex)
+            {
+                if (ex.ServerErrorTypeName == "System.IO.FileNotFoundException")
                 {
-                    Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, list.RootFolder.ServerRelativeUrl.ToString() + "/" + file.FullName.Split('\\')[1], fileStream, true);
+                    return false;
                 }
+                throw;
             }
         }
         #endregion

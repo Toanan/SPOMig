@@ -45,6 +45,9 @@ namespace SPOMig
         #endregion
 
         #region EventHandlers
+
+        #region BgWorker
+
         /// <summary>
         /// BackgroundWorker Completion Event :
         /// Show Migration Window if work was successfull
@@ -58,6 +61,10 @@ namespace SPOMig
                 this.Hide();
                 Migration mig = new Migration(Lists, Context);
                 mig.Show();
+            }
+            else
+            {
+                Btn_Connect.IsEnabled = true;
             }
         }
 
@@ -79,7 +86,7 @@ namespace SPOMig
                     SPOLogic Context = new SPOLogic(ctx);
                     ListCollection lists = Context.getLists();
                     this.Lists = lists;
-                }     
+                }
             }
             catch (Exception ex)
             {
@@ -88,6 +95,10 @@ namespace SPOMig
                 e.Cancel = true;
             }
         }
+
+        #endregion
+
+        #region Button
 
         /// <summary>
         /// Button Connect OnClick event :
@@ -113,6 +124,8 @@ namespace SPOMig
                 return;
             }
 
+            Btn_Connect.IsEnabled = false;
+
             this.SiteUrl = Tb_SPOSite.Text;
             this.UserName = Tb_UserName.Text;
             this.PassWord = Pb_PassWord.SecurePassword;
@@ -121,6 +134,9 @@ namespace SPOMig
             bw.RunWorkerAsync();
 
         }
+
+        #endregion
+
         #endregion
 
     }
