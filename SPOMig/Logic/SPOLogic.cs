@@ -34,6 +34,12 @@ namespace SPOMig
             return Libraries;
         }
 
+        /// <summary>
+        /// Copy File to a SharePoint Online library
+        /// </summary>
+        /// <param name="file">File to copy</param>
+        /// <param name="list">List to copy file to</param>
+        /// <param name="localPath">Local Path selected by user - To normalize folder path in the library</param>
         public void copyFileToSPO(FileInfo file, List list, string localPath)
         {
             using (FileStream fileStream = new FileStream(file.FullName, FileMode.Open))
@@ -45,9 +51,13 @@ namespace SPOMig
                 string fileNormalizedPathfinal = fileNormalizedPath.Replace("\\", "/");
                 string serverRelativeURL = libURL + "/" + fileNormalizedPathfinal;
 
- 
-
                 Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, true);
+
+                /*
+                CamlQuery query = new CamlQuery();
+                query.ViewXml = @"<View Scope='RecursiveAll'><Query><Where><IsNotNull><FieldRef Name='ID' /></IsNotNull></Where></Query><ViewFields><FieldRef Name='ID' /></ViewFields></View>";
+                list.GetItems(query);
+                */
             }
         }
 
