@@ -57,6 +57,8 @@ namespace SPOMig
         /// <param name="e"></param>
         private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            this.IsEnabled = true;
+            Btn_Cancel.IsEnabled = true;
             Pb_progress.Visibility = Visibility.Hidden;
             Btn_Cancel.Visibility = Visibility.Hidden;
             Btn_Copy.IsEnabled = true;
@@ -222,6 +224,7 @@ namespace SPOMig
         {
             bw.CancelAsync();
             Btn_Cancel.IsEnabled = false;
+            this.IsEnabled = false;
         }
 
         #endregion
