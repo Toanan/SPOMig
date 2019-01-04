@@ -51,6 +51,12 @@ namespace SPOMig
             }
         }
 
+        /// <summary>
+        /// Copy folder to a SharePoint Online Site library
+        /// </summary>
+        /// <param name="folder">Folder to copy</param>
+        /// <param name="list">List to copy folder to</param>
+        /// <param name="localPath">Local Path selected by user - To normalize folder path in the library</param>
         public void copyFolderToSPO (DirectoryInfo folder, List list, string localPath)
         {
             string localPathNormalized = localPath.Replace("/", "\\");
@@ -68,11 +74,18 @@ namespace SPOMig
 
                 ListItem newItem = list.AddItem(itemCreateInfo);
                 newItem["Title"] = folderPathNormalizedFinal;
+                newItem["Created"] = folder.CreationTimeUtc;
+                newItem["Modified"] = folder.CreationTimeUtc;
                 newItem.Update();
                 Context.ExecuteQuery();
             }   
         }
 
+        /// <summary>
+        /// Verify if the item allready exist in the SharePoint Online library
+        /// </summary>
+        /// <param name="itemPath"></param>
+        /// <returns></returns>
         private bool checkItemExist (string itemPath)
         {
             try

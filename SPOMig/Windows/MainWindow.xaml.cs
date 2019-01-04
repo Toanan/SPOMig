@@ -38,9 +38,7 @@ namespace SPOMig
         public MainWindow()
         {
             InitializeComponent();
-            Lb_Top.Content = "First connect to a SharePoint Online Site";
-            bw.DoWork += bw_Dowork;
-            bw.RunWorkerCompleted += bw_RunWorkerCompleted;
+            Lb_Top.Content = "First connect to a SharePoint Online Site";  
         }
         #endregion
 
@@ -123,6 +121,10 @@ namespace SPOMig
                 MessageBox.Show("Please fill the Pass Word field");
                 return;
             }
+
+            //BarckgroundWorker delegates
+            bw.DoWork += bw_Dowork;
+            bw.RunWorkerCompleted += bw_RunWorkerCompleted;
 
             Btn_Connect.IsEnabled = false;
 
