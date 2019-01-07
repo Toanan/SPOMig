@@ -159,7 +159,9 @@ namespace SPOMig
                     }
                     else
                     {
-                        ctx.copyFileToSPO(file, list, LocalPath);
+                        bool didCopy = ctx.copyFileToSPO(file, list, LocalPath);
+                        if (didCopy) MessageBox.Show("File copied");
+                        else MessageBox.Show("File allready up to date");
                     }    
                 }
             }

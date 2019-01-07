@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.SharePoint.Client;
+using System.Net;
+using System.Security.Cryptography;
 
 namespace SPOMig
 {
@@ -40,7 +42,7 @@ namespace SPOMig
         /// <param name="file">File to copy</param>
         /// <param name="list">List to copy file to</param>
         /// <param name="localPath">Local Path selected by user - To normalize folder path in the library</param>
-        public void copyFileToSPO(FileInfo file, List list, string localPath)
+        public bool copyFileToSPO(FileInfo file, List list, string localPath)
         {
             using (FileStream fileStream = new FileStream(file.FullName, FileMode.Open))
             {
@@ -51,13 +53,39 @@ namespace SPOMig
                 string fileNormalizedPathfinal = fileNormalizedPath.Replace("\\", "/");
                 string serverRelativeURL = libURL + "/" + fileNormalizedPathfinal;
 
-                Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, true);
+                Web site = Context.Web;
+                Context.Load(site, s => s.Url);
+                Context.ExecuteQuery();
+                string itemUrl = site.Url + "/" + list.RootFolder.Name + "/" + fileNormalizedPathfinal;
 
-                /*
-                CamlQuery query = new CamlQuery();
-                query.ViewXml = @"<View Scope='RecursiveAll'><Query><Where><IsNotNull><FieldRef Name='ID' /></IsNotNull></Where></Query><ViewFields><FieldRef Name='ID' /></ViewFields></View>";
-                list.GetItems(query);
-                */
+                long targetLenght = checkItemExist(itemUrl);
+
+                if (targetLenght == 0)
+                {
+                    Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, false);
+                    string currentHash = hashFromLocal(fileStream);
+
+                    Microsoft.SharePoint.Client.ListItem currentOnlinefile = Context.Web.GetListItem(serverRelativeURL);
+                    currentOnlinefile["test"] = currentHash;
+                    currentOnlinefile.Update();
+                    Context.ExecuteQuery();
+
+                    return true;
+                }
+                else //File allready exist => compare hash
+                {
+                    long localLenght = file.Length;
+
+                    if (localLenght == targetLenght)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, true);
+                        return true;
+                    }
+                }
             }
         }
 
@@ -75,7 +103,7 @@ namespace SPOMig
             string folderPathNormalizedFinal = folderPathNormalized.Replace("\\", "/");
             if (folderPathNormalizedFinal == "") return;
 
-            if (checkItemExist(folderPathNormalizedFinal) == false)
+            if (checkFolderExist(folderPathNormalizedFinal) == false)
             {
                 //To create the folder
                 ListItemCreationInformation itemCreateInfo = new ListItemCreationInformation();
@@ -92,17 +120,17 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Verify if the item allready exist in the SharePoint Online library
+        /// Verify if the folder allready exist in the SharePoint Online library
         /// </summary>
         /// <param name="itemPath"></param>
-        /// <returns></returns>
-        private bool checkItemExist (string itemPath)
+        /// <returns>Yes or no</returns>
+        private bool checkFolderExist (string itemPath)
         {
             try
             {
-                ListItem folderToCheck = Context.Web.GetListItem(itemPath);
-                Context.Load(folderToCheck);
-                Context.ExecuteQuery();
+                ListItem itemtoCheck = Context.Web.GetListItem(itemPath);
+                Context.Load(itemtoCheck);
+                Context.ExecuteQuery();               
                 return true;
             }
             catch (ServerException ex)
@@ -113,6 +141,85 @@ namespace SPOMig
                 }
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Verify if the item allready exist in the SharePoint Online library
+        /// </summary>
+        /// <param name="itemPath"></param>
+        /// <returns>File lenght</returns>
+        private long checkItemExist (string itemPath)
+        {
+            try
+            {
+                Microsoft.SharePoint.Client.File file = Context.Web.GetFileByUrl(itemPath);
+                Context.Load(file);
+                Context.ExecuteQuery();
+                return file.Length;
+            }
+            catch (ServerException ex)
+            {
+                if (ex.ServerErrorTypeName == "System.IO.FileNotFoundException")
+                {
+                    return 0;
+                }
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Compute a hash string from hashBytes
+        /// </summary>
+        /// <param name="hashBytes"></param>
+        /// <returns>hash string</returns>
+        private static string MakeHashString(byte[] hashBytes)
+        {
+            StringBuilder hash = new StringBuilder(32);
+
+            foreach (byte b in hashBytes)
+                hash.Append(b.ToString("X2").ToLower());
+
+            return hash.ToString();
+        }
+
+        /// <summary>
+        /// Compute the hash string from a filestream
+        /// </summary>
+        /// <param name="localFileStream"></param>
+        /// <returns>hash string</returns>
+        private string hashFromLocal (FileStream localFileStream)
+        {
+            byte[] buffer;
+            int byteRead;
+            long size;
+            long totalByteRead = 0;
+
+            Stream file = localFileStream;
+            
+
+            size = file.Length;
+
+            using (HashAlgorithm hasher = MD5.Create())
+            {
+                do
+                {
+                    buffer = new byte[4096];
+
+                    byteRead = file.Read(buffer, 0, buffer.Length);
+
+                    totalByteRead += byteRead;
+
+                    hasher.TransformBlock(buffer, 0, byteRead, null, 0);
+
+                }
+                while (byteRead != 0);
+
+                hasher.TransformFinalBlock(buffer, 0, 0);
+
+                return MakeHashString(hasher.Hash);
+
+            }
+            
         }
         #endregion
 
