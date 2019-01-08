@@ -83,7 +83,7 @@ namespace SPOMig
 
         /// <summary>
         /// BackgroundWorker Work event:
-        /// Retrive user info to retrive the SPO Site lists
+        /// Copy file and folders to the target SharePoint Online library
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -91,6 +91,8 @@ namespace SPOMig
         {
             try
             {
+                WriteRepport repport = new WriteRepport(this.DocLib);
+
                 //We append "/" to LocalPath for formating purpose
                 if (!this.LocalPath.EndsWith("/")) this.LocalPath = this.LocalPath + "/";
 
@@ -213,13 +215,13 @@ namespace SPOMig
             }
             #endregion
 
+            //UI update
             Btn_Copy.IsEnabled = false;
             Pb_progress.Value = 0;
             Btn_Cancel.Visibility = Visibility.Visible;
             Pb_progress.Visibility = Visibility.Visible;
 
-            
-
+            //Run the BackgroundWorker
             bw.RunWorkerAsync();  
         }
 

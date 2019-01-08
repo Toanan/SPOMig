@@ -188,6 +188,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Logic\FileLogic.cs" />
+    <Compile Include="Logic\WriteRepport.cs" />
     <Compile Include="Windows\Migration.xaml.cs">
       <DependentUpon>Migration.xaml</DependentUpon>
     </Compile>
