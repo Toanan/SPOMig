@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace SPOMig
 {
@@ -47,7 +45,7 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Retrive items from local directory
+        /// Retrive folders from local directory
         /// </summary>
         /// <param name="url"></param>
         public List<DirectoryInfo> getSourceFolders()
@@ -71,7 +69,7 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Retrive items from local directory
+        /// Retrive files from local directory
         /// </summary>
         /// <param name="url"></param>
         private List<FileInfo> getSourceFiles(string path)
@@ -89,6 +87,61 @@ namespace SPOMig
             }
 
             return files;
+        }
+
+        /// <summary>
+        /// Compute a hash string from hashBytes
+        /// </summary>
+        /// <param name="hashBytes"></param>
+        /// <returns>hash string</returns>
+        private static string MakeHashString(byte[] hashBytes)
+        {
+            StringBuilder hash = new StringBuilder(32);
+
+            foreach (byte b in hashBytes)
+                hash.Append(b.ToString("X2").ToLower());
+
+            return hash.ToString();
+        }
+
+        /// <summary>
+        /// Compute the hash string from a filestream
+        /// </summary>
+        /// <param name="localFileStream"></param>
+        /// <returns>hash string</returns>
+        public static string hashFromLocal(FileStream localFileStream)
+        {
+            byte[] buffer;
+            int byteRead;
+            long size;
+            long totalByteRead = 0;
+
+            Stream file = localFileStream;
+
+
+            size = file.Length;
+
+            using (HashAlgorithm hasher = MD5.Create())
+            {
+                do
+                {
+                    buffer = new byte[4096];
+
+                    byteRead = file.Read(buffer, 0, buffer.Length);
+
+                    totalByteRead += byteRead;
+
+                    hasher.TransformBlock(buffer, 0, byteRead, null, 0);
+
+                }
+                while (byteRead != 0);
+
+                hasher.TransformFinalBlock(buffer, 0, 0);
+
+                return MakeHashString(hasher.Hash);
+
+            }
+
         }
 
         #endregion

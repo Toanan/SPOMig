@@ -1,15 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Microsoft.SharePoint.Client;
 using System.IO;
 using System.ComponentModel;
@@ -17,12 +8,13 @@ using System.ComponentModel;
 namespace SPOMig
 {
     /// <summary>
-    /// Logique d'interaction pour Migration.xaml
+    /// Window to select a local path to copy and a SharePoint Online library as a target
     /// </summary>
     public partial class Migration : Window
     {
-
+        //We instanciate the backgroundWorker to copy folders and files 
         BackgroundWorker bw = new BackgroundWorker();
+
 
         #region Props
         public string LocalPath { get; set; }
@@ -41,7 +33,13 @@ namespace SPOMig
                 if (list.BaseTemplate == 101)
                     Cb_doclib.Items.Add(list.Title);
             }
+            //BackgroundWorker Delegates
+            bw.DoWork += bw_Dowork;
+            bw.WorkerReportsProgress = true;
+            bw.RunWorkerCompleted += bw_RunWorkerCompleted;
+            bw.ProgressChanged += bw_ProgressChanged;
 
+            bw.WorkerSupportsCancellation = true;
         }
         #endregion
 
@@ -91,59 +89,64 @@ namespace SPOMig
         /// <param name="e"></param>
         private void bw_Dowork(object sender, DoWorkEventArgs e)
         {
-           
             try
             {
                 //We append "/" to LocalPath for formating purpose
                 if (!this.LocalPath.EndsWith("/")) this.LocalPath = this.LocalPath + "/";
 
-                //Retrieving Local files and folders
+                //We retrieving Local files and folders using the FileLogic class
                 FileLogic FileLogic = new FileLogic(LocalPath);
                 List<FileInfo> files = FileLogic.getFiles();
                 List<DirectoryInfo> folders = FileLogic.getSourceFolders();
 
-                //We load the library
+                //We enable Folder creation for the SharePoint Online library
                 List list = Context.Web.Lists.GetByTitle(this.DocLib);
-                
-                //Enable Folder creation for the library
                 list.EnableFolderCreation = true;
                 list.Update();
                 Context.Load(list.RootFolder);
                 Context.ExecuteQuery();
 
+                //We instanciate the SPOLogic class to copy folders and file
                 SPOLogic ctx = new SPOLogic(Context);
-                
-                //Folders Copy
+
+                //We set the index to display progression
                 int i = 0;
+
+                #region FolderCopy
                 foreach (DirectoryInfo folder in folders)
                 {
+                    //Progression display
                     i++;
-                    double percentage = (double)i/folders.Count;
-                    int advancement = Convert.ToInt32(percentage*100);
+                    double percentage = (double)i / folders.Count;
+                    int advancement = Convert.ToInt32(percentage * 100);
                     bw.ReportProgress(advancement, $"Copying folders {advancement}%\n{i}/{folders.Count}");
-                    
-                    //Handle cancellation
+
+                    //We check for pending cancellation
                     if (bw.CancellationPending == true)
                     {
                         e.Cancel = true;
                     }
                     else
                     {
+                        //If no cancellation, we copy the folder
                         try
                         {
                             ctx.copyFolderToSPO(folder, list, LocalPath);
                         }
                         catch (Exception ex)
                         {
+                            //If the folder allready exist we catch the exception, else we 
                             if (!ex.Message.EndsWith("already exists."))
                             {
                                 MessageBox.Show(ex.Message);
                             }
                         }
-                    }  
+                    }
                 }
+                #endregion
 
-                //Files copy
+
+                #region FileCopy
                 i = 0;
                 foreach (FileInfo file in files)
                 {
@@ -152,7 +155,7 @@ namespace SPOMig
                     int advancement = Convert.ToInt32(percentage * 100);
                     bw.ReportProgress(advancement, $"Copying files {advancement}%\n{i}/{files.Count}");
 
-                    //Handle cancellation
+                    //Check if Cancellation is pending
                     if (bw.CancellationPending == true)
                     {
                         e.Cancel = true;
@@ -160,13 +163,18 @@ namespace SPOMig
                     else
                     {
                         bool didCopy = ctx.copyFileToSPO(file, list, LocalPath);
+                        /*
                         if (didCopy) MessageBox.Show("File copied");
                         else MessageBox.Show("File allready up to date");
-                    }    
+                        */
+                    }
                 }
+                #endregion
+
             }
             catch (Exception ex)
             {
+                //We cancel the backgroundWorker if an exception is not handled so far
                 MessageBox.Show(ex.Message);
                 bw.CancelAsync();
                 e.Cancel = true;
@@ -211,17 +219,15 @@ namespace SPOMig
             Pb_progress.Visibility = Visibility.Visible;
 
             
-            //BackgroundWorker Delegates
-            bw.DoWork += bw_Dowork;
-            bw.WorkerReportsProgress = true;
-            bw.RunWorkerCompleted += bw_RunWorkerCompleted;
-            bw.ProgressChanged += bw_ProgressChanged;
 
-            bw.WorkerSupportsCancellation = true;
-            bw.RunWorkerAsync();
-            
+            bw.RunWorkerAsync();  
         }
 
+        /// <summary>
+        /// Button Cancel OnClick event : Cancel the BackgroundWorker
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Btn_Cancel_Click(object sender, RoutedEventArgs e)
         {
             bw.CancelAsync();

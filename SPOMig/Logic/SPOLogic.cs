@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.SharePoint.Client;
-using System.Net;
-using System.Security.Cryptography;
 
 namespace SPOMig
 {
@@ -44,49 +38,106 @@ namespace SPOMig
         /// <param name="localPath">Local Path selected by user - To normalize folder path in the library</param>
         public bool copyFileToSPO(FileInfo file, List list, string localPath)
         {
+            //using the FileStream to dispose when computing is over
             using (FileStream fileStream = new FileStream(file.FullName, FileMode.Open))
             {
+                #region URL formating
+                //We retrieve the library serverRelativeUrl, localFilePath to compute the listItem Full Url
                 string libURL = list.RootFolder.ServerRelativeUrl.ToString();
                 string localPathNormalized = localPath.Replace("/", "\\");
                 string filePath = file.FullName.Replace("/", "\\");
                 string fileNormalizedPath = filePath.Replace(localPathNormalized, "");
                 string fileNormalizedPathfinal = fileNormalizedPath.Replace("\\", "/");
                 string serverRelativeURL = libURL + "/" + fileNormalizedPathfinal;
+                #endregion
 
-                Web site = Context.Web;
-                Context.Load(site, s => s.Url);
-                Context.ExecuteQuery();
-                string itemUrl = site.Url + "/" + list.RootFolder.Name + "/" + fileNormalizedPathfinal;
+                //We retrive the local file metadata
+                DateTime created = file.CreationTimeUtc;
+                DateTime modified = file.LastWriteTimeUtc;
 
+                //We retrive the ListItem URL to check if it exists on the SharePoint Online library
+                string siteURL = getSiteURL();
+                string itemUrl = siteURL + "/" + list.RootFolder.Name + "/" + fileNormalizedPathfinal;
+
+                //We retrive the target file length (does not exist == 0)
                 long targetLenght = checkItemExist(itemUrl);
 
+                //If the item doesn't exist => we copy the file
                 if (targetLenght == 0)
                 {
+                    //We copy the file
                     Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, false);
-                    string currentHash = hashFromLocal(fileStream);
+                    //And set the metadata
+                    setUploadedFileMetadata(serverRelativeURL, created, modified);
 
-                    Microsoft.SharePoint.Client.ListItem currentOnlinefile = Context.Web.GetListItem(serverRelativeURL);
-                    currentOnlinefile["test"] = currentHash;
-                    currentOnlinefile.Update();
-                    Context.ExecuteQuery();
+                    /* Hash Commented as we user item.lenght to compare files
+                    //We compute the hash
+                    string currentHash = FileLogic.hashFromLocal(fileStream);
+                    //We update the listitem providing the hash to the custom column
+                    setUploadedFileHash(serverRelativeURL, currentHash);
+                    */
 
                     return true;
                 }
-                else //File allready exist => compare hash
+                else //File allready exist => compare file sizes
                 {
+                    //We retrive the local file length
                     long localLenght = file.Length;
 
+                    //Check if the file are the same length
                     if (localLenght == targetLenght)
                     {
+                        //Yes, do nothing
                         return false;
                     }
-                    else
+                    else //The file has changed, so we overwrite it and set metadata
                     {
                         Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, true);
+                        setUploadedFileMetadata(serverRelativeURL, created, modified);
                         return true;
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Update the Created and modified field using local file metadata
+        /// </summary>
+        /// <param name="serverRelativeURL"></param>
+        /// <param name="created"></param>
+        /// <param name="modified"></param>
+        private void setUploadedFileMetadata(string serverRelativeURL, DateTime created, DateTime modified)
+        {
+            ListItem currentOnlinefile = Context.Web.GetListItem(serverRelativeURL);
+            currentOnlinefile["Created"] = created;
+            currentOnlinefile["Modified"] = modified;
+            currentOnlinefile.Update();
+            Context.ExecuteQuery();
+        }
+
+        /// <summary>
+        /// Update a file to add the hash value to a custom column
+        /// </summary>
+        /// <param name="serverRelativeURL"></param>
+        /// <param name="hash"></param>
+        private void setUploadedFileHash(string serverRelativeURL, string hash)
+        {
+            ListItem currentOnlinefile = Context.Web.GetListItem(serverRelativeURL);
+            currentOnlinefile["test"] = hash;
+            currentOnlinefile.Update();
+            Context.ExecuteQuery();
+        }
+
+        /// <summary>
+        /// Retrive the SharePointOnline site URL
+        /// </summary>
+        /// <returns>SharePointSite URL</returns>
+        private string getSiteURL()
+        {
+            Web site = Context.Web;
+            Context.Load(site, s => s.Url);
+            Context.ExecuteQuery();
+            return site.Url;
         }
 
         /// <summary>
@@ -167,60 +218,7 @@ namespace SPOMig
             }
         }
 
-        /// <summary>
-        /// Compute a hash string from hashBytes
-        /// </summary>
-        /// <param name="hashBytes"></param>
-        /// <returns>hash string</returns>
-        private static string MakeHashString(byte[] hashBytes)
-        {
-            StringBuilder hash = new StringBuilder(32);
-
-            foreach (byte b in hashBytes)
-                hash.Append(b.ToString("X2").ToLower());
-
-            return hash.ToString();
-        }
-
-        /// <summary>
-        /// Compute the hash string from a filestream
-        /// </summary>
-        /// <param name="localFileStream"></param>
-        /// <returns>hash string</returns>
-        private string hashFromLocal (FileStream localFileStream)
-        {
-            byte[] buffer;
-            int byteRead;
-            long size;
-            long totalByteRead = 0;
-
-            Stream file = localFileStream;
-            
-
-            size = file.Length;
-
-            using (HashAlgorithm hasher = MD5.Create())
-            {
-                do
-                {
-                    buffer = new byte[4096];
-
-                    byteRead = file.Read(buffer, 0, buffer.Length);
-
-                    totalByteRead += byteRead;
-
-                    hasher.TransformBlock(buffer, 0, byteRead, null, 0);
-
-                }
-                while (byteRead != 0);
-
-                hasher.TransformFinalBlock(buffer, 0, 0);
-
-                return MakeHashString(hasher.Hash);
-
-            }
-            
-        }
+        
         #endregion
 
     }
