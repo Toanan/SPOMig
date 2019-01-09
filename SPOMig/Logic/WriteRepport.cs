@@ -33,7 +33,7 @@ namespace SPOMig
             var date = now.ToString("yyyy-MM-dd-HH-mm-ss");
             string csvFileName = $"{libName}-{date}";
             var appPath = AppDomain.CurrentDomain.BaseDirectory;
-            var csvfilePath = $"{appPath}/Results/{csvFileName}{date}.csv";
+            var csvfilePath = $"{appPath}/Results/{csvFileName}.csv";
             if (!Directory.Exists($"{appPath}/Results/")) Directory.CreateDirectory($"{appPath}/Results/");
 
             this.ResultFilePath = csvfilePath;
