@@ -20,6 +20,7 @@ namespace SPOMig
         public string LocalPath { get; set; }
         public ClientContext Context { get; set; }
         public string DocLib { get; set; }
+        public string RepportPath { get; set; }
         #endregion
 
         #region Ctor
@@ -65,7 +66,8 @@ namespace SPOMig
 
             if (e.Cancelled == false)
             {
-                MessageBox.Show("Task finished successfully");  
+                MessageBox.Show("Task finished successfully");
+                System.Diagnostics.Process.Start($"{AppDomain.CurrentDomain.BaseDirectory}/Results/");
             }
         }
 
@@ -92,24 +94,21 @@ namespace SPOMig
             try
             {
                 WriteRepport repport = new WriteRepport(this.DocLib);
+                this.RepportPath = repport.ResultFilePath; 
 
                 //We append "/" to LocalPath for formating purpose
                 if (!this.LocalPath.EndsWith("/")) this.LocalPath = this.LocalPath + "/";
 
-                //We retrieving Local files and folders using the FileLogic class
+                //We retrive Local files and folders using the FileLogic class
                 FileLogic FileLogic = new FileLogic(LocalPath);
                 List<FileInfo> files = FileLogic.getFiles();
                 List<DirectoryInfo> folders = FileLogic.getSourceFolders();
 
-                //We enable Folder creation for the SharePoint Online library
-                List list = Context.Web.Lists.GetByTitle(this.DocLib);
-                list.EnableFolderCreation = true;
-                list.Update();
-                Context.Load(list.RootFolder);
-                Context.ExecuteQuery();
-
                 //We instanciate the SPOLogic class to copy folders and file
                 SPOLogic ctx = new SPOLogic(Context);
+
+                //We enable Folder creation for the SharePoint Online library and ensure the Hash column exist
+                List list = ctx.setLibraryReadyForPRocessing(this.DocLib);
 
                 //We set the index to display progression
                 int i = 0;
@@ -130,18 +129,16 @@ namespace SPOMig
                     }
                     else
                     {
-                        //If no cancellation, we copy the folder
-                        try
+                        //If no cancellation, we try to copy the folder
+                        bool didCopy = ctx.copyFolderToSPO(folder, list, LocalPath);
+                        if (didCopy)
                         {
-                            ctx.copyFolderToSPO(folder, list, LocalPath);
+                            repport.writeResult($"{folder.Name},Folder,,Copied,");
+                            //"Name,Type,OnlinePath,Status,Comment"
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            //If the folder allready exist we catch the exception, else we 
-                            if (!ex.Message.EndsWith("already exists."))
-                            {
-                                MessageBox.Show(ex.Message);
-                            }
+                            repport.writeResult($"{folder.Name},Folder,,Allready exists,");
                         }
                     }
                 }
@@ -165,10 +162,17 @@ namespace SPOMig
                     else
                     {
                         bool didCopy = ctx.copyFileToSPO(file, list, LocalPath);
-                        /*
-                        if (didCopy) MessageBox.Show("File copied");
-                        else MessageBox.Show("File allready up to date");
-                        */
+
+                        if (didCopy)
+                        {
+                            repport.writeResult($"{file.Name},File,{file.FullName.Remove(0,LocalPath.Length)},Copied,");
+                            //"Name,Type,OnlinePath,Status,Comment"
+                        }
+                        else
+                        {
+                            repport.writeResult($"{file.Name},File,{file.FullName.Remove(0, LocalPath.Length)},Allready exist,");
+                            //"Name,Type,OnlinePath,Status,Comment"
+                        }
                     }
                 }
                 #endregion

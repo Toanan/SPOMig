@@ -8,12 +8,15 @@ namespace SPOMig
     {
         #region Props
         public ClientContext Context { get; set; }
+
+        public string hashColumn { get; set; }
         #endregion
 
         #region Ctor
         public SPOLogic(ClientContext ctx)
         {
             this.Context = ctx;
+            this.hashColumn = "FileHash";
         }
         #endregion
 
@@ -54,38 +57,29 @@ namespace SPOMig
                 //We retrive the local file metadata
                 DateTime created = file.CreationTimeUtc;
                 DateTime modified = file.LastWriteTimeUtc;
+                string localFileHash = FileLogic.hashFromLocal(fileStream);
 
                 //We retrive the ListItem URL to check if it exists on the SharePoint Online library
                 string siteURL = getSiteURL();
                 string itemUrl = siteURL + "/" + list.RootFolder.Name + "/" + fileNormalizedPathfinal;
 
                 //We retrive the target file length (does not exist == 0)
-                long targetLenght = checkItemExist(itemUrl);
+                string targetFileHash = checkItemExist(itemUrl);
 
                 //If the item doesn't exist => we copy the file
-                if (targetLenght == 0)
+                if (targetFileHash == null)
                 {
                     //We copy the file
                     Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, false);
                     //And set the metadata
-                    setUploadedFileMetadata(serverRelativeURL, created, modified);
-
-                    /* Hash Commented as we user item.lenght to compare files
-                    //We compute the hash
-                    string currentHash = FileLogic.hashFromLocal(fileStream);
-                    //We update the listitem providing the hash to the custom column
-                    setUploadedFileHash(serverRelativeURL, currentHash);
-                    */
-
+                    setUploadedFileMetadata(serverRelativeURL, created, modified, localFileHash);
                     return true;
                 }
                 else //File allready exist => compare file sizes
                 {
-                    //We retrive the local file length
-                    long localLenght = file.Length;
 
                     //Check if the file are the same length
-                    if (localLenght == targetLenght)
+                    if (localFileHash == targetFileHash)
                     {
                         //Yes, do nothing
                         return false;
@@ -93,7 +87,7 @@ namespace SPOMig
                     else //The file has changed, so we overwrite it and set metadata
                     {
                         Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, true);
-                        setUploadedFileMetadata(serverRelativeURL, created, modified);
+                        setUploadedFileMetadata(serverRelativeURL, created, modified, localFileHash);
                         return true;
                     }
                 }
@@ -106,24 +100,12 @@ namespace SPOMig
         /// <param name="serverRelativeURL"></param>
         /// <param name="created"></param>
         /// <param name="modified"></param>
-        private void setUploadedFileMetadata(string serverRelativeURL, DateTime created, DateTime modified)
+        private void setUploadedFileMetadata(string serverRelativeURL, DateTime created, DateTime modified, string hash)
         {
             ListItem currentOnlinefile = Context.Web.GetListItem(serverRelativeURL);
             currentOnlinefile["Created"] = created;
             currentOnlinefile["Modified"] = modified;
-            currentOnlinefile.Update();
-            Context.ExecuteQuery();
-        }
-
-        /// <summary>
-        /// Update a file to add the hash value to a custom column
-        /// </summary>
-        /// <param name="serverRelativeURL"></param>
-        /// <param name="hash"></param>
-        private void setUploadedFileHash(string serverRelativeURL, string hash)
-        {
-            ListItem currentOnlinefile = Context.Web.GetListItem(serverRelativeURL);
-            currentOnlinefile["test"] = hash;
+            currentOnlinefile[this.hashColumn] = hash;
             currentOnlinefile.Update();
             Context.ExecuteQuery();
         }
@@ -146,16 +128,20 @@ namespace SPOMig
         /// <param name="folder">Folder to copy</param>
         /// <param name="list">List to copy folder to</param>
         /// <param name="localPath">Local Path selected by user - To normalize folder path in the library</param>
-        public void copyFolderToSPO (DirectoryInfo folder, List list, string localPath)
+        public bool copyFolderToSPO (DirectoryInfo folder, List list, string localPath)
         {
             string localPathNormalized = localPath.Replace("/", "\\");
             string folderPath = folder.FullName.Replace("/", "\\");
             string folderPathNormalized = folderPath.Replace(localPathNormalized, "");
             string folderPathNormalizedFinal = folderPathNormalized.Replace("\\", "/");
-            if (folderPathNormalizedFinal == "") return;
+            if (folderPathNormalizedFinal == "") return false;
 
-            if (checkFolderExist(folderPathNormalizedFinal) == false)
+            string libURL = list.RootFolder.ServerRelativeUrl.ToString();
+            string serverRelativeURL = libURL + "/" + folderPathNormalizedFinal;
+
+            if (checkFolderExist(serverRelativeURL) == false)
             {
+
                 //To create the folder
                 ListItemCreationInformation itemCreateInfo = new ListItemCreationInformation();
                 itemCreateInfo.UnderlyingObjectType = FileSystemObjectType.Folder;
@@ -167,7 +153,12 @@ namespace SPOMig
                 newItem["Modified"] = folder.CreationTimeUtc;
                 newItem.Update();
                 Context.ExecuteQuery();
-            }   
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -199,23 +190,53 @@ namespace SPOMig
         /// </summary>
         /// <param name="itemPath"></param>
         /// <returns>File lenght</returns>
-        private long checkItemExist (string itemPath)
+        private string checkItemExist (string itemPath)
         {
             try
             {
-                Microsoft.SharePoint.Client.File file = Context.Web.GetFileByUrl(itemPath);
+                ListItem file = Context.Web.GetListItem(itemPath);
                 Context.Load(file);
                 Context.ExecuteQuery();
-                return file.Length;
+                return file[this.hashColumn].ToString();
             }
             catch (ServerException ex)
             {
                 if (ex.ServerErrorTypeName == "System.IO.FileNotFoundException")
                 {
-                    return 0;
+                    return null;
                 }
                 throw;
             }
+        }
+
+        public List setLibraryReadyForPRocessing (string docLib)
+        {
+            //We enable Folder creation for the SharePoint Online library
+            List list = Context.Web.Lists.GetByTitle(docLib);
+            list.EnableFolderCreation = true;
+            list.Update();
+            Context.Load(list.RootFolder);
+            Context.ExecuteQuery();
+            try
+            {
+                Field hashField = list.Fields.GetByInternalNameOrTitle(this.hashColumn);
+                Context.ExecuteQuery();
+            }
+            
+            catch (ServerException ex)
+            {
+                if (ex.Message.EndsWith("deleted by another user."))
+                {
+                    string schemaTextField = $"<Field Type='Text' Name='{this.hashColumn}' StaticName='{this.hashColumn}' DisplayName='{this.hashColumn}' />";
+                    Field simpleTextField = list.Fields.AddFieldAsXml(schemaTextField, true, AddFieldOptions.AddFieldInternalNameHint);
+                    Context.ExecuteQuery();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return list;           
         }
 
         

@@ -53,9 +53,28 @@ namespace SPOMig
         {
             var csv = new StringBuilder();
             csv.AppendLine(result);
-            File.WriteAllText(this.ResultFilePath, csv.ToString(), Encoding.UTF8);
+            File.AppendAllText(this.ResultFilePath, csv.ToString(), Encoding.UTF8);
         }
 
+        private void createLogFile (string libName)
+        {
+            //We create the path and Name of the log file
+            DateTime now = DateTime.Now;
+            var date = now.ToString("yyyy-MM-dd-HH-mm-ss");
+            string logFileName = $"{libName}-{date}";
+            var appPath = AppDomain.CurrentDomain.BaseDirectory;
+            var logfilePath = $"{appPath}/Logs/{logFileName}{date}.csv";
+            if (!Directory.Exists($"{appPath}/Logs/")) Directory.CreateDirectory($"{appPath}/Logs/");
+
+            this.LogFilePath = logfilePath;
+        }
+
+        public void writeLog (string log)
+        {
+            var logLine = new StringBuilder();
+            logLine.AppendLine(log);
+            File.AppendAllText(this.LogFilePath, logLine.ToString(), Encoding.UTF8);
+        }
         #endregion
 
 
