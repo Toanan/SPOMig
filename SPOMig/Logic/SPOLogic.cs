@@ -57,6 +57,7 @@ namespace SPOMig
                 //We retrive the local file metadata
                 DateTime created = file.CreationTimeUtc;
                 DateTime modified = file.LastWriteTimeUtc;
+                string localFileLength = file.Length.ToString();
                 string localFileHash = FileLogic.hashFromLocal(fileStream);
 
                 //We retrive the ListItem URL to check if it exists on the SharePoint Online library
@@ -66,8 +67,8 @@ namespace SPOMig
                 //We retrive the target file length (does not exist == 0)
                 string targetFileHash = checkItemExist(itemUrl);
 
-                //If the item doesn't exist => we copy the file
-                if (targetFileHash == null)
+                //If the target item doesn't exist => we copy the file and set metadata
+                if (targetFileHash == "notFound")
                 {
                     //We copy the file
                     Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, false);
@@ -75,10 +76,29 @@ namespace SPOMig
                     setUploadedFileMetadata(serverRelativeURL, created, modified, localFileHash);
                     return true;
                 }
-                else //File allready exist => compare file sizes
+                //If target item has no hash => we compare lenght to check if copy is necessary
+                else if (targetFileHash == "noHash")
                 {
+                    string targetFileLength = getFileLenght(serverRelativeURL);
+                    //Same length => no copy
+                    if (localFileLength == targetFileLength)
+                    {
+                        return false;
+                    }
+                    //Different length => wet overwrite the file and set metadata
+                    else
+                    {
+                        //We copy the file
+                        Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, serverRelativeURL, fileStream, true);
+                        //And set the metadata
+                        setUploadedFileMetadata(serverRelativeURL, created, modified, localFileHash);
 
-                    //Check if the file are the same length
+                        return true;
+                    }
+                }
+                else
+                {
+                    //Check if the file are the same hash
                     if (localFileHash == targetFileHash)
                     {
                         //Yes, do nothing
@@ -186,6 +206,20 @@ namespace SPOMig
         }
 
         /// <summary>
+        /// Retrieve SharePoint Online file lenght
+        /// </summary>
+        /// <param name="itemPath"></param>
+        /// <returns>File lenght as string</returns>
+        private string getFileLenght (string itemPath)
+        {
+            Microsoft.SharePoint.Client.File file = Context.Web.GetFileByUrl(itemPath);
+            Context.Load(file, f => f.Length);
+            Context.ExecuteQuery();
+            return file.Length.ToString();
+        }
+
+
+        /// <summary>
         /// Verify if the item allready exist in the SharePoint Online library
         /// </summary>
         /// <param name="itemPath"></param>
@@ -197,13 +231,22 @@ namespace SPOMig
                 ListItem file = Context.Web.GetListItem(itemPath);
                 Context.Load(file);
                 Context.ExecuteQuery();
-                return file[this.hashColumn].ToString();
+                string fileHash = file[this.hashColumn].ToString();
+                return fileHash;
             }
             catch (ServerException ex)
             {
                 if (ex.ServerErrorTypeName == "System.IO.FileNotFoundException")
                 {
-                    return null;
+                    return "notFound";
+                }
+                throw;
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message == "Object reference not set to an instance of an object.")
+                {
+                    return "noHash";
                 }
                 throw;
             }
@@ -220,6 +263,7 @@ namespace SPOMig
             try
             {
                 Field hashField = list.Fields.GetByInternalNameOrTitle(this.hashColumn);
+                Context.Load(hashField);
                 Context.ExecuteQuery();
             }
             
@@ -228,7 +272,7 @@ namespace SPOMig
                 if (ex.Message.EndsWith("deleted by another user."))
                 {
                     string schemaTextField = $"<Field Type='Text' Name='{this.hashColumn}' StaticName='{this.hashColumn}' DisplayName='{this.hashColumn}' />";
-                    Field simpleTextField = list.Fields.AddFieldAsXml(schemaTextField, true, AddFieldOptions.AddFieldInternalNameHint);
+                    Field simpleTextField = list.Fields.AddFieldAsXml(schemaTextField, false, AddFieldOptions.AddFieldInternalNameHint);
                     Context.ExecuteQuery();
                 }
                 else

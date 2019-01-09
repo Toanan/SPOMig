@@ -133,12 +133,12 @@ namespace SPOMig
                         bool didCopy = ctx.copyFolderToSPO(folder, list, LocalPath);
                         if (didCopy)
                         {
-                            repport.writeResult($"{folder.Name},Folder,,Copied,");
+                            repport.writeResult($"{folder.Name},Folder,{folder.FullName.Remove(0, LocalPath.Length)},Copied,");
                             //"Name,Type,OnlinePath,Status,Comment"
                         }
                         else
                         {
-                            repport.writeResult($"{folder.Name},Folder,,Allready exists,");
+                            repport.writeResult($"{folder.Name},Folder,{folder.FullName.Remove(0, LocalPath.Length)},Allready exists,");
                         }
                     }
                 }
