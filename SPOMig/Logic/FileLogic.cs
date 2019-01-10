@@ -5,31 +5,23 @@ using System.Security.Cryptography;
 
 namespace SPOMig
 {
-    class FileLogic
+    /// <summary>
+    /// This class is used to interact with the local FileSystem
+    /// </summary>
+    static class FileLogic
     {
-        #region Props
-        public string LocalPath { get; set; }
-        #endregion
-
-        #region Ctor
-        public FileLogic(string path)
-        {
-            this.LocalPath = path;
-        }
-        #endregion
-
         #region Methods
 
         /// <summary>
         /// Retrieve all file information recursively from a local path
         /// </summary>
         /// <returns>List<FileInfo></returns>
-        public List<FileInfo> getFiles()
+        public static List<FileInfo> getFiles(string localPath)
         {
             //We retrieve the sub dirinfos
-            List<DirectoryInfo> sourceFolders = getSourceFolders();
+            List<DirectoryInfo> sourceFolders = getSourceFolders(localPath);
 
-            //We create the files fileinfo object
+            //We create the list of fileinfo to retrieve
             List<FileInfo> files = new List<FileInfo>();
 
             //And loop inside all dir to retrieve the files fileinfo
@@ -45,22 +37,23 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Retrieve folders from local directory
+        /// Retrieve all DirectoryInfo from a local path
         /// </summary>
-        /// <param name="url"></param>
-        public List<DirectoryInfo> getSourceFolders()
+        /// <param name="localPath"></param>
+        public static List<DirectoryInfo> getSourceFolders(string localPath)
         {
-            //We retrieve all directories from the local path in an array
-            string[] Folders = Directory.GetDirectories(LocalPath, "*.*", SearchOption.AllDirectories);
+            //We retrieve all directories path from the local path in an array
+            string[] foldersPath = Directory.GetDirectories(localPath, "*.*", SearchOption.AllDirectories);
             
-            //We create the list of all directoryinfo
+            //We create the list of all Directoryinfo to retrieve
             List<DirectoryInfo> folders = new List<DirectoryInfo>();
-            //We create the source rootFolder DirInfo and add it to the top of the list
-            DirectoryInfo rootFolder = new DirectoryInfo(LocalPath);
+
+            //We add the rootFolder from the local path
+            DirectoryInfo rootFolder = new DirectoryInfo(localPath);
             folders.Add(rootFolder);
 
-            //We loop to populate directoryinfo list from directory path
-            foreach (string folder in Folders)
+            //We loop the foldersPath array to retrive all the DirectoryInfo
+            foreach (string folder in foldersPath)
             {
                 DirectoryInfo di = new DirectoryInfo(folder);
                 folders.Add(di);
@@ -70,18 +63,19 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Retrieve local files in a folder
+        /// Retrieve FileInfo from a folder
         /// </summary>
-        /// <param name="url"></param>
-        private List<FileInfo> getLocalFileInFolder(string path)
+        /// <param name="folderPath"></param>
+        private static List<FileInfo> getLocalFileInFolder(string folderPath)
         {
-            //We retrieve file path from the directory path
-            string[] Files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly);
-            //We create the list to store files info
+            //We retrieve all file path from the local directory path
+            string[] filesPath = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+            
+            //We create the list of all FilesInfo to retrieve
             List<FileInfo> files = new List<FileInfo>();
 
-            //We loop to populate fileinfo from file path
-            foreach (string File in Files)
+            //We loop the filePath array to retrieve all the FileInfo
+            foreach (string File in filesPath)
             {
                 FileInfo fi = new FileInfo(File);
                 files.Add(fi);
@@ -91,11 +85,11 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Compute a hash string from hashBytes
+        /// Convert a hashBytes to string 
         /// </summary>
-        /// <param name="hashBytes"></param>
-        /// <returns>hash string</returns>
-        private static string MakeHashString(byte[] hashBytes)
+        /// <param name="hashBytes">the array of byte to convert</param>
+        /// <returns>string</returns>
+        private static string convertHashToString(byte[] hashBytes)
         {
             StringBuilder hash = new StringBuilder(32);
 
@@ -116,9 +110,7 @@ namespace SPOMig
             int byteRead;
             long size;
             long totalByteRead = 0;
-
             Stream file = localFileStream;
-
             size = file.Length;
 
             using (HashAlgorithm hasher = MD5.Create())
@@ -126,22 +118,14 @@ namespace SPOMig
                 do
                 {
                     buffer = new byte[4096];
-
                     byteRead = file.Read(buffer, 0, buffer.Length);
-
                     totalByteRead += byteRead;
-
                     hasher.TransformBlock(buffer, 0, byteRead, null, 0);
-
                 }
                 while (byteRead != 0);
-
                 hasher.TransformFinalBlock(buffer, 0, 0);
-
-                return MakeHashString(hasher.Hash);
-
+                return convertHashToString(hasher.Hash);
             }
-
         }
 
         #endregion

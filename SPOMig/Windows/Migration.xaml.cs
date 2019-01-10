@@ -20,7 +20,6 @@ namespace SPOMig
         public string LocalPath { get; set; }
         public ClientContext Context { get; set; }
         public string DocLib { get; set; }
-        public string RepportPath { get; set; }
         #endregion
 
         #region Ctor
@@ -59,15 +58,13 @@ namespace SPOMig
             try
             {
                 Reporting repport = new Reporting(this.DocLib);
-                this.RepportPath = repport.ResultFilePath;
 
                 //We append "/" to LocalPath for formating purpose
                 if (!this.LocalPath.EndsWith("/")) this.LocalPath = this.LocalPath + "/";
 
-                //We retrive Local files and folders using the FileLogic class
-                FileLogic FileLogic = new FileLogic(LocalPath);
-                List<FileInfo> files = FileLogic.getFiles();
-                List<DirectoryInfo> folders = FileLogic.getSourceFolders();
+                //We retrive the list of DirectoryInfo and FileInfo
+                List<FileInfo> files = FileLogic.getFiles(LocalPath);
+                List<DirectoryInfo> folders = FileLogic.getSourceFolders(LocalPath);
 
                 //We instanciate the SPOLogic class to copy folders and file
                 SPOLogic ctx = new SPOLogic(Context);
@@ -161,13 +158,17 @@ namespace SPOMig
             Pb_progress.Visibility = Visibility.Hidden;
             Btn_Cancel.Visibility = Visibility.Hidden;
             Btn_Copy.IsEnabled = true;
+            Tb_LocalPath.IsEnabled = true;
+            Cb_doclib.IsEnabled = true;
             Pb_progress.Value = 0;
             Lb_State.Content = "";
 
             if (e.Cancelled == false)
             {
                 MessageBox.Show("Task finished successfully");
-                System.Diagnostics.Process.Start($"{AppDomain.CurrentDomain.BaseDirectory}/Results/");
+                string appPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string appName = "SPOMig";
+                System.Diagnostics.Process.Start($"{appPath}/{appName}/Results/");
                 bw.Dispose();
             }
             bw.Dispose();
@@ -208,6 +209,8 @@ namespace SPOMig
 
             //UI update
             Btn_Copy.IsEnabled = false;
+            Tb_LocalPath.IsEnabled = false;
+            Cb_doclib.IsEnabled = false;
             Pb_progress.Value = 0;
             Btn_Cancel.Visibility = Visibility.Visible;
             Pb_progress.Visibility = Visibility.Visible;

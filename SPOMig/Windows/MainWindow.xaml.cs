@@ -60,10 +60,15 @@ namespace SPOMig
                 Migration mig = new Migration(Lists, Context);
                 mig.Show();
                 bw.Dispose();
+                this.Close();
             }
             else
             {
+                //We reactivate the UI
                 Btn_Connect.IsEnabled = true;
+                Tb_SPOSite.IsEnabled = false;
+                Tb_UserName.IsEnabled = false;
+                Pb_PassWord.IsEnabled = false;
             }
         }
 
@@ -128,6 +133,9 @@ namespace SPOMig
             bw.RunWorkerCompleted += bw_RunWorkerCompleted;
 
             Btn_Connect.IsEnabled = false;
+            Tb_SPOSite.IsEnabled = false;
+            Tb_UserName.IsEnabled = false;
+            Pb_PassWord.IsEnabled = false;
 
             this.SiteUrl = Tb_SPOSite.Text;
             this.UserName = Tb_UserName.Text;

@@ -212,6 +212,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Logic\CopyLog.cs" />
     <Compile Include="Logic\CopyStatus.cs" />
     <Compile Include="Logic\FileLogic.cs" />
     <Compile Include="Logic\Reporting.cs" />

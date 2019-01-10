@@ -200,7 +200,7 @@ namespace SPOMig
                     if (localFileLength == targetFileLength)
                     {
                         copystat.Status = "Skiped";
-                        copystat.Comment = "File found online but not hash - files are the same length so we do not upload";
+                        copystat.Comment = "File found online but not hash - files are the same length so we do not overwrite the online file";
                         return copystat;
                     }
                     //Different length => wet overwrite the file and set metadata
@@ -224,7 +224,7 @@ namespace SPOMig
                     {
                         //Yes, do nothing
                         copystat.Status = "Skiped";
-                        copystat.Comment = "File found online - files are the same hash so we do not upload";
+                        copystat.Comment = "File found online - files are the same hash so we do not overwrite the online file";
                         return copystat;
                     }
                     else //The file has changed, so we overwrite it and set metadata

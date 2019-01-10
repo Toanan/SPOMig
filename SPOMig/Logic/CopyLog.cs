@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 namespace SPOMig
 {
     /// <summary>
-    /// This class is used to provide feedback to the writeResult method of the report class
+    /// This class is used to provide feedback to the writeLog method of the report class
     /// </summary>
-    class CopyStatus
+    class CopyLog
     {
-        public string Name { get; set; }
-        public string Type { get; set; }
+        public enum Status { OK, Warning, Error}
+        public string ItemPath { get; set; }
+        public string Action { get; set; }
         public string Path { get; set; }
-        public string Status { get; set; }
         public string Comment { get; set; }
     }
 }

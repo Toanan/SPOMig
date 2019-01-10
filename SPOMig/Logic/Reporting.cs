@@ -7,21 +7,22 @@ using System.IO;
 
 namespace SPOMig
 {
-
+    /// <summary>
+    /// This class is used to create result and log file
+    /// </summary>
     class Reporting
     {
 
         #region Props
-        public string LogFileName { get; set; }
         public string LogFilePath { get; set; }
-        public string ResultFileName { get; set; }
         public string ResultFilePath { get; set; }
+        private enum reportFileType { Result, Log }
         #endregion
 
         #region Ctor
-        public WriteRepport(string libName)
+        public Reporting(string libName)
         {
-            createResultFile(libName);
+            createFiles(libName);
         }
         #endregion
 
@@ -29,28 +30,27 @@ namespace SPOMig
 
         /// <summary>
         /// Create the result csv file and set header
+        /// TODO : Create the log file
         /// </summary>
         /// <param name="libName">SharePoint Online library name</param>
-        private void createResultFile (string libName)
+        private void createFiles (string libName)
         {
-            //We create the path of the csv file
-            DateTime now = DateTime.Now;
-            var date = now.ToString("yyyy-MM-dd-HH-mm-ss");
-            string csvFileName = $"{libName}-{date}";
-            var appPath = AppDomain.CurrentDomain.BaseDirectory;
-            var csvfilePath = $"{appPath}/Results/{csvFileName}.csv";
+            //We create the result file name and ensure the Result folder exists
+            string resultFilePath = setFilePath(libName, reportFileType.Result);
+            string logFilePath = setFilePath(libName, reportFileType.Log);
 
-            //We check if the Results directory exist, if not we create it
-            if (!Directory.Exists($"{appPath}/Results/")) Directory.CreateDirectory($"{appPath}/Results/");
-
-            //We set to ResultFilePath property of the Reporting object
-            this.ResultFilePath = csvfilePath;
+            //We set to FilePath properties of the Reporting object
+            this.ResultFilePath = resultFilePath;
+            this.LogFilePath = logFilePath;
 
             //We create the result file and set the header
-            var csv = new StringBuilder();
+            var resultHeader = new StringBuilder();
             var header = "Name,Type,Path,Status,Comment";
-            csv.AppendLine(header);
-            File.WriteAllText(csvfilePath, csv.ToString(), Encoding.UTF8);
+            resultHeader.AppendLine(header);
+            File.WriteAllText(resultFilePath, resultHeader.ToString(), Encoding.UTF8);
+
+            //We create the log file 
+
         }
 
         /// <summary>
@@ -66,27 +66,40 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Create the log file
+        /// 
         /// </summary>
-        /// <param name="libName"></param>
-        private void createLogFile (string libName)
-        {
-            //We create the path and Name of the log file
-            DateTime now = DateTime.Now;
-            var date = now.ToString("yyyy-MM-dd-HH-mm-ss");
-            string logFileName = $"{libName}-{date}";
-            var appPath = AppDomain.CurrentDomain.BaseDirectory;
-            var logfilePath = $"{appPath}/Logs/{logFileName}{date}.csv";
-            if (!Directory.Exists($"{appPath}/Logs/")) Directory.CreateDirectory($"{appPath}/Logs/");
-
-            this.LogFilePath = logfilePath;
-        }
-
+        /// <param name="log"></param>
         public void writeLog (string log)
         {
             var logLine = new StringBuilder();
             logLine.AppendLine(log);
             File.AppendAllText(this.LogFilePath, logLine.ToString(), Encoding.UTF8);
+        }
+
+        
+
+        private string setFilePath(string libName, reportFileType type)
+        {
+            //We create name of the file
+            DateTime now = DateTime.Now;
+            var date = now.ToString("yyyy-MM-dd-HH-mm-ss");
+            string FileName = $"{libName}-{date}";
+            //string appPath = AppDomain.CurrentDomain.BaseDirectory;
+            string appPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string appName = "SPOMig";
+
+            if (type == reportFileType.Result)
+            {
+                string filePath = $"{appPath}/{appName}/Results/{FileName}.csv";
+                if (!Directory.Exists($"{appPath}/{appName}/Results/")) Directory.CreateDirectory($"{appPath}/{appName}/Results/");
+                return filePath;
+            }
+            else
+            {
+                string filePath = $"{appPath}/{appName}/Logs/{FileName}.log";
+                if (!Directory.Exists($"{appPath}/{appName}/Logs/")) Directory.CreateDirectory($"{appPath}/{appName}/Logs/");
+                return filePath;
+            }
         }
         #endregion
 
