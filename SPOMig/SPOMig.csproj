@@ -212,8 +212,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Logic\CopyStatus.cs" />
     <Compile Include="Logic\FileLogic.cs" />
-    <Compile Include="Logic\WriteRepport.cs" />
+    <Compile Include="Logic\Reporting.cs" />
     <Compile Include="Windows\Migration.xaml.cs">
       <DependentUpon>Migration.xaml</DependentUpon>
     </Compile>

@@ -8,7 +8,7 @@ using System.IO;
 namespace SPOMig
 {
 
-    class WriteRepport
+    class Reporting
     {
 
         #region Props
@@ -26,6 +26,11 @@ namespace SPOMig
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// Create the result csv file and set header
+        /// </summary>
+        /// <param name="libName">SharePoint Online library name</param>
         private void createResultFile (string libName)
         {
             //We create the path of the csv file
@@ -34,28 +39,36 @@ namespace SPOMig
             string csvFileName = $"{libName}-{date}";
             var appPath = AppDomain.CurrentDomain.BaseDirectory;
             var csvfilePath = $"{appPath}/Results/{csvFileName}.csv";
+
+            //We check if the Results directory exist, if not we create it
             if (!Directory.Exists($"{appPath}/Results/")) Directory.CreateDirectory($"{appPath}/Results/");
 
+            //We set to ResultFilePath property of the Reporting object
             this.ResultFilePath = csvfilePath;
 
-            //We create the result file by writing the header
+            //We create the result file and set the header
             var csv = new StringBuilder();
-            var header = "Name,Type,OnlinePath,Status,Comment";
+            var header = "Name,Type,Path,Status,Comment";
             csv.AppendLine(header);
             File.WriteAllText(csvfilePath, csv.ToString(), Encoding.UTF8);
         }
 
         /// <summary>
-        /// Write result when copying file and folder
+        /// Write the processing result on the result csv file
         /// </summary>
-        /// <param name="result"></param>
-        public void writeResult (string result)
+        /// <param name="copyStatus">CopyStatus object</param>
+        public void writeResult (CopyStatus copyStatus)
         {
             var csv = new StringBuilder();
+            string result = $"{copyStatus.Name},{copyStatus.Type},{copyStatus.Path},{copyStatus.Status},{copyStatus.Comment}";
             csv.AppendLine(result);
             File.AppendAllText(this.ResultFilePath, csv.ToString(), Encoding.UTF8);
         }
 
+        /// <summary>
+        /// Create the log file
+        /// </summary>
+        /// <param name="libName"></param>
         private void createLogFile (string libName)
         {
             //We create the path and Name of the log file

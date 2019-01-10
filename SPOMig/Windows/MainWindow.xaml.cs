@@ -59,6 +59,7 @@ namespace SPOMig
                 this.Hide();
                 Migration mig = new Migration(Lists, Context);
                 mig.Show();
+                bw.Dispose();
             }
             else
             {

@@ -49,52 +49,17 @@ namespace SPOMig
         #region BgWorker
 
         /// <summary>
-        /// BackgroundWorker Completion Event :
-        /// Show Migration Window if work was successfull
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            this.IsEnabled = true;
-            Btn_Cancel.IsEnabled = true;
-            Pb_progress.Visibility = Visibility.Hidden;
-            Btn_Cancel.Visibility = Visibility.Hidden;
-            Btn_Copy.IsEnabled = true;
-            Pb_progress.Value = 0;
-            Lb_State.Content = "";
-
-            if (e.Cancelled == false)
-            {
-                MessageBox.Show("Task finished successfully");
-                System.Diagnostics.Process.Start($"{AppDomain.CurrentDomain.BaseDirectory}/Results/");
-            }
-        }
-
-        /// <summary>
-        /// BackgroundWorker Completion Event :
-        /// Show Migration Window if work was successfull
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void bw_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            Pb_progress.Value = e.ProgressPercentage;
-            Lb_State.Content = e.UserState;
-        }
-
-        /// <summary>
         /// BackgroundWorker Work event:
-        /// Copy file and folders to the target SharePoint Online library
+        /// Copy file and folders from the path selected to the target SharePoint Online library
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <param name="sender">Btn_Copy</param>
+        /// <param name="e">OnClick()</param>
         private void bw_Dowork(object sender, DoWorkEventArgs e)
         {
             try
             {
-                WriteRepport repport = new WriteRepport(this.DocLib);
-                this.RepportPath = repport.ResultFilePath; 
+                Reporting repport = new Reporting(this.DocLib);
+                this.RepportPath = repport.ResultFilePath;
 
                 //We append "/" to LocalPath for formating purpose
                 if (!this.LocalPath.EndsWith("/")) this.LocalPath = this.LocalPath + "/";
@@ -130,16 +95,9 @@ namespace SPOMig
                     else
                     {
                         //If no cancellation, we try to copy the folder
-                        bool didCopy = ctx.copyFolderToSPO(folder, list, LocalPath);
-                        if (didCopy)
-                        {
-                            repport.writeResult($"{folder.Name},Folder,{folder.FullName.Remove(0, LocalPath.Length)},Copied,");
-                            //"Name,Type,OnlinePath,Status,Comment"
-                        }
-                        else
-                        {
-                            repport.writeResult($"{folder.Name},Folder,{folder.FullName.Remove(0, LocalPath.Length)},Allready exists,");
-                        }
+                        CopyStatus copyStatus = ctx.copyFolderToSPO(folder, list, LocalPath);
+                        if (copyStatus == null) continue;
+                        repport.writeResult(copyStatus);
                     }
                 }
                 #endregion
@@ -161,18 +119,9 @@ namespace SPOMig
                     }
                     else
                     {
-                        bool didCopy = ctx.copyFileToSPO(file, list, LocalPath);
+                        CopyStatus copyStatus = ctx.copyFileToSPO(file, list, LocalPath);
 
-                        if (didCopy)
-                        {
-                            repport.writeResult($"{file.Name},File,{file.FullName.Remove(0,LocalPath.Length)},Copied,");
-                            //"Name,Type,OnlinePath,Status,Comment"
-                        }
-                        else
-                        {
-                            repport.writeResult($"{file.Name},File,{file.FullName.Remove(0, LocalPath.Length)},Allready exist,");
-                            //"Name,Type,OnlinePath,Status,Comment"
-                        }
+                        repport.writeResult(copyStatus);
                     }
                 }
                 #endregion
@@ -186,6 +135,44 @@ namespace SPOMig
                 e.Cancel = true;
             }
         }
+
+        /// <summary>
+        /// BackgroundWorker Completion Event :
+        /// Show Migration Window if work was successfull
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void bw_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            Pb_progress.Value = e.ProgressPercentage;
+            Lb_State.Content = e.UserState;
+        }
+
+        /// <summary>
+        /// BackgroundWorker Completion Event :
+        /// Show Migration Window if work was successfull
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            this.IsEnabled = true;
+            Btn_Cancel.IsEnabled = true;
+            Pb_progress.Visibility = Visibility.Hidden;
+            Btn_Cancel.Visibility = Visibility.Hidden;
+            Btn_Copy.IsEnabled = true;
+            Pb_progress.Value = 0;
+            Lb_State.Content = "";
+
+            if (e.Cancelled == false)
+            {
+                MessageBox.Show("Task finished successfully");
+                System.Diagnostics.Process.Start($"{AppDomain.CurrentDomain.BaseDirectory}/Results/");
+                bw.Dispose();
+            }
+            bw.Dispose();
+        }
+
         #endregion
 
         #region Button

@@ -21,7 +21,7 @@ namespace SPOMig
         #region Methods
 
         /// <summary>
-        /// Retrive all file information recursively from a path
+        /// Retrieve all file information recursively from a local path
         /// </summary>
         /// <returns>List<FileInfo></returns>
         public List<FileInfo> getFiles()
@@ -35,7 +35,7 @@ namespace SPOMig
             //And loop inside all dir to retrieve the files fileinfo
             foreach (DirectoryInfo directory in sourceFolders)
             {
-                List<FileInfo> Currentfiles = getSourceFiles(directory.FullName);
+                List<FileInfo> Currentfiles = getLocalFileInFolder(directory.FullName);
                 foreach (FileInfo fi in Currentfiles)
                 {
                     files.Add(fi);
@@ -45,20 +45,21 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Retrive folders from local directory
+        /// Retrieve folders from local directory
         /// </summary>
         /// <param name="url"></param>
         public List<DirectoryInfo> getSourceFolders()
         {
-            // TODO ADD the root directory !!
+            //We retrieve all directories from the local path in an array
             string[] Folders = Directory.GetDirectories(LocalPath, "*.*", SearchOption.AllDirectories);
-            //We create the list to put all directories
+            
+            //We create the list of all directoryinfo
             List<DirectoryInfo> folders = new List<DirectoryInfo>();
             //We create the source rootFolder DirInfo and add it to the top of the list
             DirectoryInfo rootFolder = new DirectoryInfo(LocalPath);
             folders.Add(rootFolder);
 
-            //We loop to populate directory info from directory path
+            //We loop to populate directoryinfo list from directory path
             foreach (string folder in Folders)
             {
                 DirectoryInfo di = new DirectoryInfo(folder);
@@ -69,12 +70,12 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Retrive files from local directory
+        /// Retrieve local files in a folder
         /// </summary>
         /// <param name="url"></param>
-        private List<FileInfo> getSourceFiles(string path)
+        private List<FileInfo> getLocalFileInFolder(string path)
         {
-            //We retrive file path from the directory path
+            //We retrieve file path from the directory path
             string[] Files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly);
             //We create the list to store files info
             List<FileInfo> files = new List<FileInfo>();
@@ -117,7 +118,6 @@ namespace SPOMig
             long totalByteRead = 0;
 
             Stream file = localFileStream;
-
 
             size = file.Length;
 
