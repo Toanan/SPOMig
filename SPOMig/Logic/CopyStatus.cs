@@ -12,9 +12,11 @@ namespace SPOMig
     class CopyStatus
     {
         public string Name { get; set; }
-        public string Type { get; set; }
+        public ItemType Type { get; set; }
         public string Path { get; set; }
-        public string Status { get; set; }
+        public ItemStatus Status { get; set; }
         public string Comment { get; set; }
+        public enum ItemType { File, Folder }
+        public enum ItemStatus { Created, Skiped, Uploaded, Overwrited }
     }
 }

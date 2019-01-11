@@ -15,7 +15,6 @@ namespace SPOMig
         //We instanciate the backgroundWorker to copy folders and files 
         BackgroundWorker bw = new BackgroundWorker();
 
-
         #region Props
         public string LocalPath { get; set; }
         public ClientContext Context { get; set; }
@@ -27,13 +26,14 @@ namespace SPOMig
         {
             InitializeComponent();
             this.Context = ctx;
-            // Retrive only document library from the ListCollection passed
+            //We retrieve only document library from the ListCollection passed and populate the combobox
             foreach (List list in ListCollection)
             {
                 if (list.BaseTemplate == 101)
                     Cb_doclib.Items.Add(list.Title);
             }
-            //BackgroundWorker Delegates
+
+            //We set the backgroundWorker Delegates
             bw.DoWork += bw_Dowork;
             bw.WorkerReportsProgress = true;
             bw.RunWorkerCompleted += bw_RunWorkerCompleted;
@@ -55,18 +55,19 @@ namespace SPOMig
         /// <param name="e">OnClick()</param>
         private void bw_Dowork(object sender, DoWorkEventArgs e)
         {
+            //We instanciate the repporting object
+            Reporting repport = new Reporting(this.DocLib);
+
             try
             {
-                Reporting repport = new Reporting(this.DocLib);
-
-                //We append "/" to LocalPath for formating purpose
+                //We ensure the localpath endwith "/" for further formating actions
                 if (!this.LocalPath.EndsWith("/")) this.LocalPath = this.LocalPath + "/";
 
                 //We retrive the list of DirectoryInfo and FileInfo
                 List<FileInfo> files = FileLogic.getFiles(LocalPath);
                 List<DirectoryInfo> folders = FileLogic.getSourceFolders(LocalPath);
 
-                //We instanciate the SPOLogic class to copy folders and file
+                //We instanciate the SPOLogic object to interact with SharePoint Online
                 SPOLogic ctx = new SPOLogic(Context);
 
                 //We enable Folder creation for the SharePoint Online library and ensure the Hash column exist
@@ -91,9 +92,12 @@ namespace SPOMig
                     }
                     else
                     {
-                        //If no cancellation, we try to copy the folder
+                        //If no cancellation, we launch the copy folder process
                         CopyStatus copyStatus = ctx.copyFolderToSPO(folder, list, LocalPath);
+                        //We skip the rootfolder
                         if (copyStatus == null) continue;
+
+                        //We write the processing result on th result file
                         repport.writeResult(copyStatus);
                     }
                 }

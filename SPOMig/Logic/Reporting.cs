@@ -12,7 +12,6 @@ namespace SPOMig
     /// </summary>
     class Reporting
     {
-
         #region Props
         public string LogFilePath { get; set; }
         public string ResultFilePath { get; set; }
@@ -49,7 +48,7 @@ namespace SPOMig
             resultHeader.AppendLine(header);
             File.WriteAllText(resultFilePath, resultHeader.ToString(), Encoding.UTF8);
 
-            //We create the log file 
+            //We create the log file TODO
 
         }
 
@@ -66,7 +65,7 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// 
+        /// TODO
         /// </summary>
         /// <param name="log"></param>
         public void writeLog (string log)
@@ -76,8 +75,12 @@ namespace SPOMig
             File.AppendAllText(this.LogFilePath, logLine.ToString(), Encoding.UTF8);
         }
 
-        
-
+        /// <summary>
+        /// Return the repport file path and ensure it exists
+        /// </summary>
+        /// <param name="libName"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
         private string setFilePath(string libName, reportFileType type)
         {
             //We create name of the file
@@ -88,22 +91,29 @@ namespace SPOMig
             string appPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string appName = "SPOMig";
 
-            if (type == reportFileType.Result)
+            //We loop the file type to return the path accordingly
+            switch (type)
             {
-                string filePath = $"{appPath}/{appName}/Results/{FileName}.csv";
-                if (!Directory.Exists($"{appPath}/{appName}/Results/")) Directory.CreateDirectory($"{appPath}/{appName}/Results/");
-                return filePath;
-            }
-            else
-            {
-                string filePath = $"{appPath}/{appName}/Logs/{FileName}.log";
-                if (!Directory.Exists($"{appPath}/{appName}/Logs/")) Directory.CreateDirectory($"{appPath}/{appName}/Logs/");
-                return filePath;
+                case reportFileType.Result:
+
+                    string resultFilePath = $"{appPath}/{appName}/Results/{FileName}.csv";
+                    //We ensure path exists
+                    if (!Directory.Exists($"{appPath}/{appName}/Results/")) Directory.CreateDirectory($"{appPath}/{appName}/Results/");
+                    return resultFilePath;
+
+                case reportFileType.Log:
+
+                    string logFilePath = $"{appPath}/{appName}/Logs/{FileName}.log";
+                    //We ensure path exists
+                    if (!Directory.Exists($"{appPath}/{appName}/Logs/")) Directory.CreateDirectory($"{appPath}/{appName}/Logs/");
+                    return logFilePath;
+
+                default:
+
+                    throw new NotImplementedException();
             }
         }
+        
         #endregion
-
-
-
     }
 }

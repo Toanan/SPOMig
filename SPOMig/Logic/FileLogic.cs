@@ -7,6 +7,8 @@ namespace SPOMig
 {
     /// <summary>
     /// This class is used to interact with the local FileSystem
+    /// It provides methods to retrive a list of DirectoryInfo and FileInfo from a path
+    /// It also provide a method to compute file hash
     /// </summary>
     static class FileLogic
     {
