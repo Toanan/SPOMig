@@ -1,18 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.ComponentModel;
 using Microsoft.SharePoint.Client;
 
@@ -54,6 +42,7 @@ namespace SPOMig
         /// <param name="e"></param>
         private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            //If the backgroundWorker complete the task successfully, we open themigration window
             if (e.Cancelled == false)
             {
                 this.Hide();
@@ -80,6 +69,7 @@ namespace SPOMig
         /// <param name="e"></param>
         private void bw_Dowork(object sender, DoWorkEventArgs e)
         {
+            //We try to connect to the SharePoint Online site and retrieve the libraries
             try
             {
                 using (var ctx = new ClientContext(SiteUrl))
@@ -112,6 +102,7 @@ namespace SPOMig
         /// <param name="e"></param>
         private void Btn_Connect_Click(object sender, RoutedEventArgs e)
         {
+            #region UserInput Checks
             if (Tb_SPOSite.Text == "")
             {
                 MessageBox.Show("Please fill the site URL field");
@@ -127,20 +118,24 @@ namespace SPOMig
                 MessageBox.Show("Please fill the Pass Word field");
                 return;
             }
+            #endregion
 
             //BarckgroundWorker delegates
             bw.DoWork += bw_Dowork;
             bw.RunWorkerCompleted += bw_RunWorkerCompleted;
 
+            //UI update
             Btn_Connect.IsEnabled = false;
             Tb_SPOSite.IsEnabled = false;
             Tb_UserName.IsEnabled = false;
             Pb_PassWord.IsEnabled = false;
 
+            //We set the class properties
             this.SiteUrl = Tb_SPOSite.Text;
             this.UserName = Tb_UserName.Text;
             this.PassWord = Pb_PassWord.SecurePassword;
-
+            
+            //We ensure the backgroundWorker supports cancellation and run it
             bw.WorkerSupportsCancellation = true;
             bw.RunWorkerAsync();
 

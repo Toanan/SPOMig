@@ -48,8 +48,10 @@ namespace SPOMig
             resultHeader.AppendLine(header);
             File.WriteAllText(resultFilePath, resultHeader.ToString(), Encoding.UTF8);
 
-            //We create the log file TODO
-
+            //We create the log file by writing process start
+            var logStartMessage = $"[Process beggin]Destination Library : {libName}";
+            CopyLog log = new CopyLog(logStartMessage);
+            writeLog(log);
         }
 
         /// <summary>
@@ -68,11 +70,46 @@ namespace SPOMig
         /// TODO
         /// </summary>
         /// <param name="log"></param>
-        public void writeLog (string log)
+        public void writeLog (CopyLog log)
         {
-            var logLine = new StringBuilder();
-            logLine.AppendLine(log);
-            File.AppendAllText(this.LogFilePath, logLine.ToString(), Encoding.UTF8);
+            //We retrieve the date 
+            DateTime date = DateTime.Now;
+            string formatedDate = date.ToString("yyyy-MM-dd-HH-mm-ss");
+
+            //We iterate the ActionStatus value to render the log
+            switch (log.ActionStatus)
+            {
+                case CopyLog.Status.Verbose:
+                    var verboseLogLine = new StringBuilder();
+                    verboseLogLine.AppendLine($"{formatedDate}-[{log.Action} - {log.ActionStatus}] #Path : {log.ItemPath}");
+                    File.AppendAllText(this.LogFilePath, verboseLogLine.ToString(), Encoding.UTF8);
+                    break;
+
+                case CopyLog.Status.Empty:
+                    var emptyLogLine = new StringBuilder();
+                    emptyLogLine.AppendLine("------------------------------------------------");
+                    emptyLogLine.AppendLine($"{formatedDate}-{log.Comment}");
+                    emptyLogLine.AppendLine("------------------------------------------------");
+                    File.AppendAllText(this.LogFilePath, emptyLogLine.ToString(), Encoding.UTF8);
+                    break;
+
+                default:
+                    //Do we display a comment ?
+                    if (string.IsNullOrWhiteSpace(log.Comment))
+                    {
+                        var defaultLogLine = new StringBuilder();
+                        defaultLogLine.AppendLine($"{formatedDate}-[{log.Action} - {log.ActionStatus}] #Path : {log.ItemPath}");
+                        File.AppendAllText(this.LogFilePath, defaultLogLine.ToString(), Encoding.UTF8);
+                    }
+                    else
+                    {
+                        var defaultLogLine = new StringBuilder();
+                        defaultLogLine.AppendLine($"{formatedDate}-[{log.Action} - {log.ActionStatus}] #Path : {log.ItemPath} #Message : {log.Comment}");
+                        File.AppendAllText(this.LogFilePath, defaultLogLine.ToString(), Encoding.UTF8);
+                    }
+                    
+                    break;
+            }
         }
 
         /// <summary>

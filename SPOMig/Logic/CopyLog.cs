@@ -11,10 +11,48 @@ namespace SPOMig
     /// </summary>
     class CopyLog
     {
-        public enum Status { OK, Warning, Error}
+        #region Props
+        public enum Status { OK, Warning, Error, Verbose , Empty}
+        public Status ActionStatus { get; set; }
         public string ItemPath { get; set; }
         public string Action { get; set; }
-        public string Path { get; set; }
         public string Comment { get; set; }
+        #endregion
+
+        #region Ctor
+        public CopyLog(Status result, string action, string itemPath, string comment)
+        {
+            this.ActionStatus = result;
+            this.ItemPath = itemPath;
+            this.Action = action;
+            this.Comment = comment;
+        }
+
+        public CopyLog(string comment)
+        {
+            this.Comment = comment;
+            this.ActionStatus = Status.Empty;
+        }
+        #endregion
+
+        #region Methods
+        //Update the log content and post it to the file
+        public void update(Status result, string action, string itemPath, string comment)
+        {
+            this.ActionStatus = result;
+            this.ItemPath = itemPath;
+            this.Action = action;
+            this.Comment = comment;
+        }
+
+        public void update(string comment)
+        {
+            this.ActionStatus = CopyLog.Status.Empty;
+            this.ItemPath = "";
+            this.Action = "";
+            this.Comment = comment;
+        }
+        #endregion
+
     }
 }

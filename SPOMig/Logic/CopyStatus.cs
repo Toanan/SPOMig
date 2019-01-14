@@ -17,6 +17,6 @@ namespace SPOMig
         public ItemStatus Status { get; set; }
         public string Comment { get; set; }
         public enum ItemType { File, Folder }
-        public enum ItemStatus { Created, Skiped, Uploaded, Overwrited }
+        public enum ItemStatus { Created, Skiped, Uploaded, Overwrited, Error }
     }
 }

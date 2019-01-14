@@ -55,28 +55,55 @@ namespace SPOMig
         /// <param name="e">OnClick()</param>
         private void bw_Dowork(object sender, DoWorkEventArgs e)
         {
-            //We instanciate the repporting object
+            //[RESULT/LOG] We instanciate the repporting object
             Reporting repport = new Reporting(this.DocLib);
+            //[LOG:Verbose] We create the log object and log Local Path formating
+            CopyLog log = new CopyLog(CopyLog.Status.Verbose, "Local path formating", LocalPath, "");
+            repport.writeLog(log);
 
             try
             {
                 //We ensure the localpath endwith "/" for further formating actions
-                if (!this.LocalPath.EndsWith("/")) this.LocalPath = this.LocalPath + "/";
+                if (!this.LocalPath.EndsWith("/") ||!this.LocalPath.EndsWith("\\")) this.LocalPath = this.LocalPath + "\\";
+
+                //[LOG:OK] Local Path formating : Log success
+                log.ActionStatus = CopyLog.Status.OK;
+                repport.writeLog(log);
+                //[LOG:Verbose] Local file retrieve
+                log.update(CopyLog.Status.Verbose, "Local file retrieve", LocalPath, "");
+                repport.writeLog(log);
 
                 //We retrive the list of DirectoryInfo and FileInfo
                 List<FileInfo> files = FileLogic.getFiles(LocalPath);
                 List<DirectoryInfo> folders = FileLogic.getSourceFolders(LocalPath);
 
+                //[LOG:OK] Local file retrieve
+                log.ActionStatus = CopyLog.Status.OK;
+                repport.writeLog(log);
+
                 //We instanciate the SPOLogic object to interact with SharePoint Online
                 SPOLogic ctx = new SPOLogic(Context);
+
+                //[LOG:Verbose] Checking library
+                log.update(CopyLog.Status.Verbose, "Checking library", LocalPath, "");
+                repport.writeLog(log);
 
                 //We enable Folder creation for the SharePoint Online library and ensure the Hash column exist
                 List list = ctx.setLibraryReadyForPRocessing(this.DocLib);
 
+                //[LOG:OK] Checking library
+                log.ActionStatus = CopyLog.Status.OK;
+                repport.writeLog(log);
+
+                #region Folder Creation
+
+                //[LOG:Title] Folder creation beggins
+                log.update("[Starting Folder Creation process]");
+                repport.writeLog(log);
+
                 //We set the index to display progression
                 int i = 0;
 
-                #region FolderCopy
                 foreach (DirectoryInfo folder in folders)
                 {
                     //Progression display
@@ -88,26 +115,57 @@ namespace SPOMig
                     //We check for pending cancellation
                     if (bw.CancellationPending == true)
                     {
+                        //[LOG:CANCEL] Cancellation log
+                        log.update("[Process Cancelled]");
+                        repport.writeLog(log);
+
+                        //We cancel the backgroundWorker and return
                         e.Cancel = true;
+                        return;
                     }
+                    //If no cancellation, we launch the copy folder process
                     else
                     {
-                        //If no cancellation, we launch the copy folder process
-                        CopyStatus copyStatus = ctx.copyFolderToSPO(folder, list, LocalPath);
-                        //We skip the rootfolder
-                        if (copyStatus == null) continue;
+                        //[LOG:Verbose] Folder Creation
+                        log.update(CopyLog.Status.Verbose, "Folder creation", folder.FullName, "");
+                        repport.writeLog(log);
 
-                        //We write the processing result on th result file
-                        repport.writeResult(copyStatus);
+                        //We process the folder
+                        CopyStatus copyStatus = ctx.copyFolderToSPO(folder, list, LocalPath);
+
+                        //[LOG:OK] Folder Creation
+                        log.ActionStatus = CopyLog.Status.OK;
+                        if (copyStatus != null)
+                        {
+                            //[LOG:OK] Folder Creation update path
+                            log.ItemPath = copyStatus.Path;
+                            log.Comment = copyStatus.Comment;
+                            repport.writeLog(log);
+                            //[RESULT] Folder Creation
+                            repport.writeResult(copyStatus);
+                        }
+                        else
+                        {
+                            //We skip writing result for the rootfolder
+                            repport.writeLog(log);
+                        }
                     }
                 }
                 #endregion
 
 
                 #region FileCopy
+
+                //[LOG:Title] File upload beggins
+                log.update("[Starting File Upload process]");
+                repport.writeLog(log);
+
+                //We reset the progression index
                 i = 0;
+
                 foreach (FileInfo file in files)
                 {
+                    //Progression display
                     i++;
                     double percentage = (double)i / files.Count;
                     int advancement = Convert.ToInt32(percentage * 100);
@@ -116,12 +174,31 @@ namespace SPOMig
                     //Check if Cancellation is pending
                     if (bw.CancellationPending == true)
                     {
+                        //[LOG:CANCEL] Cancellation log
+                        log.update("[Process Cancelled]");
+                        repport.writeLog(log);
+
+                        //We cancel the backgroundWorker and return
                         e.Cancel = true;
+                        return;
                     }
+                    //If no cancellation, we launch the copy file process
                     else
                     {
+                        //[LOG:Verbose] File Upload
+                        log.update(CopyLog.Status.Verbose, "File upload", file.FullName, "");
+                        repport.writeLog(log);
+
+                        //We copy the file
                         CopyStatus copyStatus = ctx.copyFileToSPO(file, list, LocalPath);
 
+                        //[LOG:OK] File Upload
+                        log.ActionStatus = CopyLog.Status.OK;
+                        log.ItemPath = copyStatus.Path;
+                        log.Comment = copyStatus.Comment;
+
+                        //[RESULT/LOG: OK] File Upload
+                        repport.writeLog(log);
                         repport.writeResult(copyStatus);
                     }
                 }
@@ -134,6 +211,21 @@ namespace SPOMig
                 MessageBox.Show(ex.Message);
                 bw.CancelAsync();
                 e.Cancel = true;
+
+                //[LOG:ERROR] Error log
+                log.ActionStatus = CopyLog.Status.Error;
+                log.Comment = ex.Message;
+                repport.writeLog(log);
+
+                //[RESULT:ERROR] Error result
+                CopyStatus copyError = new CopyStatus
+                {
+                    Comment = ex.Message,
+                    Name = log.ItemPath,
+                    Path = log.ItemPath,
+                    Status = CopyStatus.ItemStatus.Error
+                };
+                repport.writeResult(copyError);
             }
         }
 
@@ -157,6 +249,7 @@ namespace SPOMig
         /// <param name="e"></param>
         private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            //UI update
             this.IsEnabled = true;
             Btn_Cancel.IsEnabled = true;
             Pb_progress.Visibility = Visibility.Hidden;
@@ -167,6 +260,7 @@ namespace SPOMig
             Pb_progress.Value = 0;
             Lb_State.Content = "";
 
+            //If no cancelation, we show a message box and open the relust file path
             if (e.Cancelled == false)
             {
                 MessageBox.Show("Task finished successfully");
