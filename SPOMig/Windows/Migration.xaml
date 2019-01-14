@@ -16,5 +16,6 @@
         <ProgressBar Name="Pb_progress" Visibility="Hidden" HorizontalAlignment="Left" Height="29" Margin="136,136,0,0" VerticalAlignment="Top" Width="525"/>
         <Button Name="Btn_Cancel" Content="Cancel" Visibility="Hidden" HorizontalAlignment="Left" Margin="682,136,0,0" VerticalAlignment="Top" Width="81" Height="29" Click="Btn_Cancel_Click"/>
         <Label Name="Lb_State" HorizontalAlignment="Left" HorizontalContentAlignment="Center" Margin="12,130,0,0" VerticalAlignment="Top"/>
+        <Button Content="Home" HorizontalAlignment="Left" Margin="678,20,0,0" VerticalAlignment="Top" Width="85" Click="Button_Click"/>
     </Grid>
 </Window>

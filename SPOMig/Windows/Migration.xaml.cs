@@ -333,5 +333,13 @@ namespace SPOMig
 
         #endregion
 
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            this.Hide();
+            MainWindow mw = new MainWindow();
+            mw.Show();
+            bw.Dispose();
+            this.Close();
+        }
     }
 }
