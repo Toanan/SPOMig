@@ -67,7 +67,7 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// TODO
+        /// Write logs on the log file
         /// </summary>
         /// <param name="log"></param>
         public void writeLog (CopyLog log)

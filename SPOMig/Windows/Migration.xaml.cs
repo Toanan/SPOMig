@@ -26,12 +26,37 @@ namespace SPOMig
         {
             InitializeComponent();
             this.Context = ctx;
+            Cb_doclib.SelectedIndex = 0;
+
             //We retrieve only document library from the ListCollection passed and populate the combobox
             foreach (List list in ListCollection)
             {
                 if (list.BaseTemplate == 101)
                     Cb_doclib.Items.Add(list.Title);
             }
+
+            //We set the top header of the window
+            Lb_Top.Content = "SharePoint Online detected \nSelect a local path and a library to synchronize";
+
+            //We set the backgroundWorker Delegates
+            bw.DoWork += bw_Dowork;
+            bw.WorkerReportsProgress = true;
+            bw.RunWorkerCompleted += bw_RunWorkerCompleted;
+            bw.ProgressChanged += bw_ProgressChanged;
+
+            bw.WorkerSupportsCancellation = true;
+        }
+
+        public Migration(List odList, ClientContext ctx)
+        {
+            InitializeComponent();
+            this.Context = ctx;
+
+            Cb_doclib.Items.Add(odList.Title);
+            Cb_doclib.SelectedIndex = 0;
+
+            //We set the top header of the window
+            Lb_Top.Content = "OneDrive detected \nSelect a local path to synchronize";
 
             //We set the backgroundWorker Delegates
             bw.DoWork += bw_Dowork;
@@ -298,11 +323,12 @@ namespace SPOMig
                 MessageBox.Show("Cannot find local path, please double check");
                 return;
             }
+            /*
             if (Cb_doclib.SelectedItem == null)
             {
                 MessageBox.Show("Please select a document library");
                 return;
-            }
+            }*/
             #endregion
 
             //UI update
@@ -333,6 +359,11 @@ namespace SPOMig
 
         #endregion
 
+        /// <summary>
+        /// Buttom Home to navigate to the login window
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();

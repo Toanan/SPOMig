@@ -20,13 +20,14 @@ namespace SPOMig
         public SecureString PassWord { get; set; }
         public ListCollection Lists { get; set; }
         public ClientContext Context { get; set; }
+        public List ODLibrary { get; set; }
         #endregion
 
         #region Ctor
         public MainWindow()
         {
             InitializeComponent();
-            Lb_Top.Content = "First connect to a SharePoint Online Site";  
+            Lb_Top.Content = "First connect to a OneDrive or SharePoint Online Site";  
         }
         #endregion
 
@@ -46,8 +47,16 @@ namespace SPOMig
             if (e.Cancelled == false)
             {
                 this.Hide();
-                Migration mig = new Migration(Lists, Context);
-                mig.Show();
+                if (ODLibrary != null)
+                {
+                    Migration mig = new Migration(ODLibrary, Context);
+                    mig.Show();
+                }
+                else
+                {
+                    Migration mig = new Migration(Lists, Context);
+                    mig.Show();
+                }
                 bw.Dispose();
                 this.Close();
             }
@@ -55,9 +64,9 @@ namespace SPOMig
             {
                 //We reactivate the UI
                 Btn_Connect.IsEnabled = true;
-                Tb_SPOSite.IsEnabled = false;
-                Tb_UserName.IsEnabled = false;
-                Pb_PassWord.IsEnabled = false;
+                Tb_SPOSite.IsEnabled = true;
+                Tb_UserName.IsEnabled = true;
+                Pb_PassWord.IsEnabled = true;
             }
         }
 
@@ -78,8 +87,21 @@ namespace SPOMig
                     ctx.Credentials = credentials;
                     this.Context = ctx;
                     SPOLogic Context = new SPOLogic(ctx);
-                    ListCollection lists = Context.getLists();
-                    this.Lists = lists;
+                    //We check if the SPO site is a OneDrive Url, and process accordingly
+                    if (SiteUrl.Contains("/personal/"))
+                    {
+                        List odlists = ctx.Web.Lists.GetByTitle("Documents");
+                        ctx.Load(odlists);
+                        ctx.ExecuteQuery();
+                        this.ODLibrary = odlists;
+                    }
+                    //Else we have a SPO Site Url, and process accordingly
+                    else
+                    {
+                        ListCollection lists = Context.getLists();
+                        this.Lists = lists;
+                    }
+                    
                 }
             }
             catch (Exception ex)
@@ -138,7 +160,6 @@ namespace SPOMig
             //We ensure the backgroundWorker supports cancellation and run it
             bw.WorkerSupportsCancellation = true;
             bw.RunWorkerAsync();
-
         }
 
         #endregion

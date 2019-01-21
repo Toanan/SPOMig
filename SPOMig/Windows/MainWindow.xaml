@@ -12,7 +12,7 @@
         <TextBox Name="Tb_SPOSite" Text="https://toanan.sharepoint.com/sites/Salut" HorizontalAlignment="Left" Height="22" Margin="270,74,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="369"/>
         <Label Content="User Name" HorizontalAlignment="Left" Margin="71,100,0,0" VerticalAlignment="Top"/>
         <TextBox Text="a.galland@toanan.onmicrosoft.com" Name="Tb_UserName" HorizontalAlignment="Left" Height="22" Margin="270,100,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="369"/>
-        <Label Content="Pass Word" HorizontalAlignment="Left" Margin="71,126,0,0" VerticalAlignment="Top"/>
+        <Label Content="PassWord" HorizontalAlignment="Left" Margin="71,126,0,0" VerticalAlignment="Top"/>
         <PasswordBox Name="Pb_PassWord" HorizontalAlignment="Left" Height="22" Margin="270,126,0,0" VerticalAlignment="Top" Width="369"/>
         <Button Name="Btn_Connect" Content="Connect" HorizontalAlignment="Left" Margin="663,74,0,0" VerticalAlignment="Top" Width="75" Height="74" Click="Btn_Connect_Click"/>
     </Grid>
