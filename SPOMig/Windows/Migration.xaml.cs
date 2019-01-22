@@ -26,7 +26,7 @@ namespace SPOMig
         {
             InitializeComponent();
             this.Context = ctx;
-            Cb_doclib.SelectedIndex = 0;
+            
 
             //We retrieve only document library from the ListCollection passed and populate the combobox
             foreach (List list in ListCollection)
@@ -36,7 +36,10 @@ namespace SPOMig
             }
 
             //We set the top header of the window
-            Lb_Top.Content = "SharePoint Online detected \nSelect a local path and a library to synchronize";
+            Lb_Top.Content = "Select a local path and a library to synchronize";
+            Img_SP.Visibility = Visibility.Visible;
+            Cb_doclib.SelectedIndex = 0;
+            Lb_Connected.Content = $"Connected to {ctx.Url}";
 
             //We set the backgroundWorker Delegates
             bw.DoWork += bw_Dowork;
@@ -56,7 +59,9 @@ namespace SPOMig
             Cb_doclib.SelectedIndex = 0;
 
             //We set the top header of the window
-            Lb_Top.Content = "OneDrive detected \nSelect a local path to synchronize";
+            Lb_Top.Content = "Select a local path to synchronize";
+            Img_OD.Visibility = Visibility.Visible;
+            Lb_Connected.Content = $"Connected to {ctx.Url}";
 
             //We set the backgroundWorker Delegates
             bw.DoWork += bw_Dowork;
@@ -364,13 +369,35 @@ namespace SPOMig
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void BtnHome_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();
             MainWindow mw = new MainWindow();
             mw.Show();
             bw.Dispose();
             this.Close();
+        }
+
+        /// <summary>
+        /// Button Clean Library to clear library from the Hash column
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnClean_Click(object sender, RoutedEventArgs e)
+        {
+            //We update the UI
+            this.IsEnabled = false;
+            string libName = Cb_doclib.Text;
+
+            //We create the context object and call the column supression method
+            SPOLogic spo = new SPOLogic(Context);
+            bool didClean = spo.clanLibraryFromProcessing(libName);
+
+            if (didClean) MessageBox.Show("Library is clean");
+
+            //We reactivate the UI
+            this.IsEnabled = true;
+
         }
     }
 }

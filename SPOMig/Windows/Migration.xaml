@@ -5,17 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SPOMig"
         mc:Ignorable="d"
-        Title="Migration" Height="212.827" Width="800" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Icon="/SPOMig;component/Ressources/migration_icon_sbX_icon.ico">
+        Title="Migration" Height="288.027" Width="800" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Icon="/SPOMig;component/Ressources/migration_icon_sbX_icon.ico">
     <Grid>
-        <Label HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Name="Lb_Top" HorizontalAlignment="Center" Margin="155,9,168.6,0" VerticalAlignment="Top" Height="41" Width="470"/>
-        <Label Content="Local Path" HorizontalAlignment="Left" Margin="59,52,0,0" VerticalAlignment="Top"/>
-        <TextBox Name="Tb_LocalPath" HorizontalAlignment="Left" Height="23" Margin="136,55,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="525"/>
-        <Label Content="Document Library" HorizontalAlignment="Left" Margin="19,93,0,0" VerticalAlignment="Top"/>
-        <ComboBox Name="Cb_doclib" HorizontalAlignment="Left" Margin="136,97,0,0" VerticalAlignment="Top" Width="120"/>
-        <Button Name="Btn_Copy" Content="Copy Files" HorizontalAlignment="Left" Margin="678,52,0,0" VerticalAlignment="Top" Width="85" Height="67" Click="Btn_Copy_Click"/>
-        <ProgressBar Name="Pb_progress" Visibility="Hidden" HorizontalAlignment="Left" Height="29" Margin="136,136,0,0" VerticalAlignment="Top" Width="525"/>
-        <Button Name="Btn_Cancel" Content="Cancel" Visibility="Hidden" HorizontalAlignment="Left" Margin="682,136,0,0" VerticalAlignment="Top" Width="81" Height="29" Click="Btn_Cancel_Click"/>
-        <Label Name="Lb_State" HorizontalAlignment="Left" HorizontalContentAlignment="Center" Margin="12,130,0,0" VerticalAlignment="Top"/>
-        <Button Content="Home" HorizontalAlignment="Left" Margin="678,20,0,0" VerticalAlignment="Top" Width="85" Click="Button_Click"/>
+        <Image Name="Img_SP" Visibility="Hidden" Source="C:\Users\Antoine Galland\source\repos\SPOMig\SPOMig\Ressources\kisspng-sharepoint-computer-icons-microsoft-office-365-outlook-5ac078e7923895.5907463815225633035989.png" Margin="28,0,712.6,211.4" />
+        <Image Name="Img_OD" Visibility="Hidden" Source="C:\Users\Antoine Galland\source\repos\SPOMig\SPOMig\Ressources\OneDrive-Android.png" Margin="19,0,707.6,211.4"/>
+        <Label Name="Lb_Connected" Margin="86,6,140.6,211.4" />
+        <Label HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Name="Lb_Top" HorizontalAlignment="Center" Margin="155,35,168.6,0" VerticalAlignment="Top" Height="41" Width="470"/>
+        <Label Content="Local Path" HorizontalAlignment="Left" Margin="59,78,0,0" VerticalAlignment="Top"/>
+        <TextBox Name="Tb_LocalPath" HorizontalAlignment="Left" Height="23" Margin="136,81,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="525"/>
+        <Label Content="Document Library" HorizontalAlignment="Left" Margin="19,119,0,0" VerticalAlignment="Top"/>
+        <ComboBox Name="Cb_doclib" HorizontalAlignment="Left" Margin="136,123,0,0" VerticalAlignment="Top" Width="120"/>
+        <Button Name="Btn_Copy" Content="Copy Files" HorizontalAlignment="Left" Margin="678,78,0,0" VerticalAlignment="Top" Width="85" Height="67" Click="Btn_Copy_Click"/>
+        <ProgressBar Name="Pb_progress" Visibility="Hidden" HorizontalAlignment="Left" Height="29" Margin="136,164,0,0" VerticalAlignment="Top" Width="525"/>
+        <Button Name="Btn_Cancel" Content="Cancel" Visibility="Hidden" HorizontalAlignment="Left" Margin="682,162,0,0" VerticalAlignment="Top" Width="81" Height="29" Click="Btn_Cancel_Click"/>
+        <Label Name="Lb_State" HorizontalAlignment="Left" HorizontalContentAlignment="Center" Margin="12,160,0,0" VerticalAlignment="Top"/>
+        <Button Content="Back to loggin" HorizontalAlignment="Left" Margin="678,11,0,0" VerticalAlignment="Top" Width="85" Click="BtnHome_Click"/>
+        <Button Content="Clean Library" HorizontalAlignment="Left" Margin="678,45,0,0" VerticalAlignment="Top" Width="85" Click="BtnClean_Click"/>
     </Grid>
 </Window>

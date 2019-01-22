@@ -87,6 +87,43 @@ namespace SPOMig
         }
 
         /// <summary>
+        /// Enable the folder creation in the SharePoint Online library and ensure the hash column is present
+        /// </summary>
+        /// <param name="docLib">Name of the library to set</param>
+        /// <returns>The list object including the list RootFolder for further processing</returns>
+        public bool clanLibraryFromProcessing(string docLib)
+        {
+            //We enable Folder creation for the SharePoint Online library
+            List list = Context.Web.Lists.GetByTitle(docLib);
+            Context.Load(list.RootFolder);
+            Context.ExecuteQuery();
+
+            //We try to retrieve the hashField
+            try
+            {
+                Field hashField = list.Fields.GetByInternalNameOrTitle(this.hashColumn);
+                Context.Load(hashField);
+                hashField.DeleteObject();
+                list.Update();
+                Context.ExecuteQuery();
+                return true;
+            }
+            catch (ServerException ex)
+            {
+                //If we cannot retrieve the hashfield, job is done
+                if (ex.Message.EndsWith("deleted by another user.") || ex.Message.EndsWith("invalid fieldname"))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                    throw ex;
+                }
+            }
+        }
+
+        /// <summary>
         /// Copy folder to a SharePoint Online Site library
         /// </summary>
         /// <param name="folder">Folder to copy</param>
