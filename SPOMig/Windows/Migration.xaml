@@ -19,7 +19,7 @@
         <ProgressBar Name="Pb_progress" Visibility="Hidden" HorizontalAlignment="Left" Height="29" Margin="136,164,0,0" VerticalAlignment="Top" Width="525"/>
         <Button Name="Btn_Cancel" Content="Cancel" Visibility="Hidden" HorizontalAlignment="Left" Margin="682,162,0,0" VerticalAlignment="Top" Width="81" Height="29" Click="Btn_Cancel_Click"/>
         <Label Name="Lb_State" HorizontalAlignment="Left" HorizontalContentAlignment="Center" Margin="12,160,0,0" VerticalAlignment="Top"/>
-        <Button Content="Back to loggin" HorizontalAlignment="Left" Margin="678,11,0,0" VerticalAlignment="Top" Width="85" Click="BtnHome_Click"/>
-        <Button Content="Clean Library" HorizontalAlignment="Left" Margin="678,45,0,0" VerticalAlignment="Top" Width="85" Click="BtnClean_Click"/>
+        <Button Name="Btn_Home" Content="Back to loggin" HorizontalAlignment="Left" Margin="678,11,0,0" VerticalAlignment="Top" Width="85" Click="BtnHome_Click"/>
+        <Button Name="Btn_Clean" Content="Clean Library" HorizontalAlignment="Left" Margin="678,45,0,0" VerticalAlignment="Top" Width="85" Click="BtnClean_Click"/>
     </Grid>
 </Window>

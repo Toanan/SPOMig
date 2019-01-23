@@ -286,6 +286,8 @@ namespace SPOMig
             Btn_Cancel.Visibility = Visibility.Hidden;
             Btn_Copy.IsEnabled = true;
             Tb_LocalPath.IsEnabled = true;
+            Btn_Clean.IsEnabled = true;
+            Btn_Home.IsEnabled = true;
             Cb_doclib.IsEnabled = true;
             Pb_progress.Value = 0;
             Lb_State.Content = "";
@@ -339,6 +341,8 @@ namespace SPOMig
             //UI update
             Btn_Copy.IsEnabled = false;
             Tb_LocalPath.IsEnabled = false;
+            Btn_Clean.IsEnabled = false;
+            Btn_Home.IsEnabled = false;
             Cb_doclib.IsEnabled = false;
             Pb_progress.Value = 0;
             Btn_Cancel.Visibility = Visibility.Visible;
@@ -391,7 +395,7 @@ namespace SPOMig
 
             //We create the context object and call the column supression method
             SPOLogic spo = new SPOLogic(Context);
-            bool didClean = spo.clanLibraryFromProcessing(libName);
+            bool didClean = spo.cleanLibraryFromProcessing(libName);
 
             if (didClean) MessageBox.Show("Library is clean");
 

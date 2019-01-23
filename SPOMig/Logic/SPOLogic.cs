@@ -72,7 +72,7 @@ namespace SPOMig
             catch (ServerException ex)
             {
                 //If we cannot retrieve the hashfield, we create it
-                if (ex.Message.EndsWith("deleted by another user."))
+                if (ex.Message.EndsWith("deleted by another user.") || ex.Message.Contains("Invalid field name"))
                 {
                     string schemaTextField = $"<Field Type='Text' Name='{this.hashColumn}' StaticName='{this.hashColumn}' DisplayName='{this.hashColumn}' />";
                     Field simpleTextField = list.Fields.AddFieldAsXml(schemaTextField, false, AddFieldOptions.AddFieldInternalNameHint);
@@ -91,7 +91,7 @@ namespace SPOMig
         /// </summary>
         /// <param name="docLib">Name of the library to set</param>
         /// <returns>The list object including the list RootFolder for further processing</returns>
-        public bool clanLibraryFromProcessing(string docLib)
+        public bool cleanLibraryFromProcessing(string docLib)
         {
             //We enable Folder creation for the SharePoint Online library
             List list = Context.Web.Lists.GetByTitle(docLib);
@@ -183,6 +183,164 @@ namespace SPOMig
         }
 
         /// <summary>
+        /// From MSDocs - to investigate
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="libraryName"></param>
+        /// <param name="fileName"></param>
+        /// <param name="fileChunkSizeInMB"></param>
+        /// <returns></returns>
+        public Microsoft.SharePoint.Client.File UploadFileSlicePerSlice(ClientContext ctx, string libraryName, string fileName, string itemNormalizedPath, int fileChunkSizeInMB = 3)
+        {
+            // Each sliced upload requires a unique ID.
+            Guid uploadId = Guid.NewGuid();
+
+            // Get the name of the file.
+            string uniqueFileName = Path.GetFileName(fileName);
+
+            // Get the folder to upload into. 
+            List docs = ctx.Web.Lists.GetByTitle(libraryName);
+            ctx.Load(docs, l => l.RootFolder);
+            // Get the information about the folder that will hold the file.
+            ctx.Load(docs.RootFolder, f => f.ServerRelativeUrl);
+            ctx.ExecuteQuery();
+
+            // File object.
+            Microsoft.SharePoint.Client.File uploadFile;
+
+            // Calculate block size in bytes.
+            int blockSize = fileChunkSizeInMB * 1024 * 1024;
+
+            // Get the information about the folder that will hold the file.
+            ctx.Load(docs.RootFolder, f => f.ServerRelativeUrl);
+            ctx.ExecuteQuery();
+
+
+            // Get the size of the file.
+            long fileSize = new FileInfo(fileName).Length;
+
+            if (fileSize <= blockSize)
+            {
+                // Use regular approach.
+                using (FileStream fs = new FileStream(fileName, FileMode.Open))
+                {
+                    FileCreationInformation fileInfo = new FileCreationInformation();
+                    fileInfo.ContentStream = fs;
+                    fileInfo.Url = itemNormalizedPath;
+                    fileInfo.Overwrite = true;
+                    uploadFile = docs.RootFolder.Files.Add(fileInfo);
+                    ctx.Load(uploadFile);
+                    ctx.ExecuteQuery();
+                    // Return the file object for the uploaded file.
+                    return uploadFile;
+                }
+            }
+            else
+            {
+                // Use large file upload approach.
+                ClientResult<long> bytesUploaded = null;
+
+                FileStream fs = null;
+                try
+                {
+                    fs = System.IO.File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using (BinaryReader br = new BinaryReader(fs))
+                    {
+                        byte[] buffer = new byte[blockSize];
+                        Byte[] lastBuffer = null;
+                        long fileoffset = 0;
+                        long totalBytesRead = 0;
+                        int bytesRead;
+                        bool first = true;
+                        bool last = false;
+
+                        // Read data from file system in blocks. 
+                        while ((bytesRead = br.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            totalBytesRead = totalBytesRead + bytesRead;
+
+                            // You've reached the end of the file.
+                            if (totalBytesRead == fileSize)
+                            {
+                                last = true;
+                                // Copy to a new buffer that has the correct size.
+                                lastBuffer = new byte[bytesRead];
+                                Array.Copy(buffer, 0, lastBuffer, 0, bytesRead);
+                            }
+
+                            if (first)
+                            {
+                                using (MemoryStream contentStream = new MemoryStream())
+                                {
+                                    // Add an empty file.
+                                    FileCreationInformation fileInfo = new FileCreationInformation();
+                                    fileInfo.ContentStream = contentStream;
+                                    fileInfo.Url = itemNormalizedPath;
+                                    fileInfo.Overwrite = true;
+                                    uploadFile = docs.RootFolder.Files.Add(fileInfo);
+
+                                    // Start upload by uploading the first slice. 
+                                    using (MemoryStream s = new MemoryStream(buffer))
+                                    {
+                                        // Call the start upload method on the first slice.
+                                        bytesUploaded = uploadFile.StartUpload(uploadId, s);
+                                        ctx.ExecuteQuery();
+                                        // fileoffset is the pointer where the next slice will be added.
+                                        fileoffset = bytesUploaded.Value;
+                                    }
+
+                                    // You can only start the upload once.
+                                    first = false;
+                                }
+                            }
+                            else
+                            {
+                                // Get a reference to your file.
+                                uploadFile = ctx.Web.GetFileByServerRelativeUrl(itemNormalizedPath);
+
+                                if (last)
+                                {
+                                    // Is this the last slice of data?
+                                    using (MemoryStream s = new MemoryStream(lastBuffer))
+                                    {
+                                        // End sliced upload by calling FinishUpload.
+                                        uploadFile = uploadFile.FinishUpload(uploadId, fileoffset, s);
+                                        ctx.ExecuteQuery();
+
+                                        // Return the file object for the uploaded file.
+                                        return uploadFile;
+                                    }
+                                }
+                                else
+                                {
+                                    using (MemoryStream s = new MemoryStream(buffer))
+                                    {
+                                        // Continue sliced upload.
+                                        bytesUploaded = uploadFile.ContinueUpload(uploadId, fileoffset, s);
+                                        ctx.ExecuteQuery();
+                                        // Update fileoffset for the next slice.
+                                        fileoffset = bytesUploaded.Value;
+                                    }
+                                }
+                            }
+
+                        } // while ((bytesRead = br.Read(buffer, 0, buffer.Length)) > 0)
+                    }
+                }
+                finally
+                {
+                    if (fs != null)
+                    {
+                        fs.Dispose();
+                    }
+                }
+            }
+
+            return null;
+        }
+
+
+        /// <summary>
         /// Copy File to a SharePoint Online library
         /// </summary>
         /// <param name="file">File to copy</param>
@@ -199,89 +357,107 @@ namespace SPOMig
                 Path = file.FullName.Remove(0, localPath.Length)
             };
 
+            //We set the variable for the using statement bellow
+            ItemURLs fileUrls;
+            DateTime created;
+            DateTime modified;
+            string localFileLength;
+            string localFileHash;
+            string siteURL;
+            string itemUrl;
+            OnlineFileStatus targetFileStat;
+
             //using the FileStream to dispose when processing is over
             using (FileStream fileStream = new FileStream(file.FullName, FileMode.Open))
             {
                 //We retrieve the normalized Urls (ItemNormalized path and ServerRelativeUrl)
-                ItemURLs fileUrls = formatUrl(file, list, localPath);
+                fileUrls = formatUrl(file, list, localPath);
 
                 //We retrieve the local file metadata
-                DateTime created = file.CreationTimeUtc;
-                DateTime modified = file.LastWriteTimeUtc;
-                string localFileLength = file.Length.ToString();
-                string localFileHash = FileLogic.hashFromLocal(fileStream);
+                created = file.CreationTimeUtc;
+                modified = file.LastWriteTimeUtc;
+                localFileLength = file.Length.ToString();
+                localFileHash = FileLogic.hashFromLocal(fileStream);
 
                 //We retrieve the ListItem URL to check if it exists on the SharePoint Online library
-                string siteURL = getSiteURL();
-                string itemUrl = siteURL + "/" + list.RootFolder.Name + "/" + fileUrls.ItemNormalizedPath;
+                siteURL = getSiteURL();
+                itemUrl = siteURL + "/" + list.RootFolder.Name + "/" + fileUrls.ItemNormalizedPath;
 
                 //We retrive the target file length (does not exist == 0)
-                OnlineFileStatus targetFileStat = checkItemExist(itemUrl);
+                targetFileStat = checkItemExist(itemUrl);
+            }
 
-                //If the target item does not exist, we copy the file and set metadata
-                if (targetFileStat.FileFound == OnlineFileStatus.FileStatus.NotFound)
+            //If the target item does not exist, we copy the file and set metadata
+            if (targetFileStat.FileFound == OnlineFileStatus.FileStatus.NotFound)
+            {
+                //We copy the file and set metadata
+                //Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, false);
+                UploadFileSlicePerSlice(Context, "Documents", file.FullName, fileUrls.ServerRelativeUrl);
+                setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
+
+                //We update the CopyStatus accordingly
+                copystat.Status =  CopyStatus.ItemStatus.Uploaded;
+                copystat.Comment = "File not found online - Uploaded";
+
+                return copystat;
+            }
+            //If target item has no hash, we compare lenght to check if copy is necessary
+            else if (targetFileStat.HashFound == OnlineFileStatus.HashStatus.NotFound)
+            {
+                //We retrive the target file length
+                string targetFileLength = getFileLenght(fileUrls.ServerRelativeUrl);
+                    
+                //Local and Online Files are the same length, se we do not overwrite
+                if (localFileLength == targetFileLength)
                 {
-                    //We copy the file and set metadata
-                    Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, false);
+                    //We update metadata
                     setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
 
                     //We update the CopyStatus accordingly
-                    copystat.Status =  CopyStatus.ItemStatus.Uploaded;
-                    copystat.Comment = "File not found online - Uploaded";
+                    copystat.Status = CopyStatus.ItemStatus.Skiped;
+                    copystat.Comment = "File found online but not hash - files are the same length so we do not overwrite the online file";
 
                     return copystat;
                 }
-                //If target item has no hash, we compare lenght to check if copy is necessary
-                else if (targetFileStat.HashFound == OnlineFileStatus.HashStatus.NotFound)
+                else//If the file are different length, we overwrite the file and set metadata
                 {
-                    //We retrive the target file length
-                    string targetFileLength = getFileLenght(fileUrls.ServerRelativeUrl);
-                    
-                    //Local and Online Files are the same length, se we do not overwrite
-                    if (localFileLength == targetFileLength)
-                    {
-                        //We update the CopyStatus accordingly
-                        copystat.Status = CopyStatus.ItemStatus.Skiped;
-                        copystat.Comment = "File found online but not hash - files are the same length so we do not overwrite the online file";
+                    //We copy the file and set metadata
+                    //Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, true);
+                    UploadFileSlicePerSlice(Context, "Documents", file.FullName, fileUrls.ServerRelativeUrl);
+                    setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
 
-                        return copystat;
-                    }
-                    else//If the file are different length, we overwrite the file and set metadata
-                    {
-                        //We copy the file and set metadata
-                        Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, true);
-                        setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
+                    //We update the CopyStatus accordingly
+                    copystat.Status = CopyStatus.ItemStatus.Overwrited;
+                    copystat.Comment = "File found online but not hash - files are not the same length so we overwrite the online file";
 
-                        //We update the CopyStatus accordingly
-                        copystat.Status = CopyStatus.ItemStatus.Overwrited;
-                        copystat.Comment = "File found online but not hash - files are not the same length so we overwrite the online file";
-
-                        return copystat;
-                    }
+                    return copystat;
                 }
-                else
+            }
+            else
+            {
+                //If files are the same Hash, we do not overwrite
+                if (localFileHash == targetFileStat.Hash)
                 {
-                    //If files are the same Hash, we do not overwrite
-                    if (localFileHash == targetFileStat.Hash)
-                    {
-                        //We update the CopyStatus accordingly
-                        copystat.Status = CopyStatus.ItemStatus.Skiped;
-                        copystat.Comment = "File found online - files are the same hash so we do not overwrite the online file";
+                    //We update the CopyStatus accordingly
+                    copystat.Status = CopyStatus.ItemStatus.Skiped;
+                    copystat.Comment = "File found online - files are the same hash so we do not overwrite the online file";
 
-                        return copystat;
-                    }
-                    else //The file are not the same hash, we overwrite it and set metadata
-                    {
-                        Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, true);
-                        setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
-
-                        //We update the CopyStatus accordingly
-                        copystat.Status = CopyStatus.ItemStatus.Overwrited;
-                        copystat.Comment = "File found online - files are not the same hash so we overwrite the online file";
-
-                        return copystat;
-                    }
+                    return copystat;
                 }
+                else //The file are not the same hash, we overwrite it and set metadata
+                {
+                    //We copy the file and set metadata
+                    //Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, true);
+                    UploadFileSlicePerSlice(Context, "Documents", file.FullName, fileUrls.ServerRelativeUrl);
+                    setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
+
+                    //We update the CopyStatus accordingly
+                    copystat.Status = CopyStatus.ItemStatus.Overwrited;
+                    copystat.Comment = "File found online - files are not the same hash so we overwrite the online file";
+
+                    return copystat;
+                }
+                
             }
         }
 
@@ -411,6 +587,8 @@ namespace SPOMig
                 {
                     //We update the OnlineFileStatus accordingly
                     status.FileFound = OnlineFileStatus.FileStatus.NotFound;
+                    status.HashFound = OnlineFileStatus.HashStatus.NotFound;
+                    status.Hash = null;
 
                     return status;
                 }
@@ -423,6 +601,7 @@ namespace SPOMig
                 {
                     //We update the OnlineFileStatus accordingly
                     status.HashFound = OnlineFileStatus.HashStatus.NotFound;
+                    status.Hash = null;
                     return status;
                 }
                 throw ex;
