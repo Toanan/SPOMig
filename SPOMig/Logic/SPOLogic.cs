@@ -59,7 +59,7 @@ namespace SPOMig
             List list = Context.Web.Lists.GetByTitle(docLib);
             list.EnableFolderCreation = true;
             list.Update();
-            Context.Load(list.RootFolder);
+            Context.Load(list, l => l.Title, l => l.RootFolder);
             Context.ExecuteQuery();
 
             //We try to retrieve the hashField
@@ -156,7 +156,7 @@ namespace SPOMig
 
                 //We create the folder
                 ListItem newItem = list.AddItem(itemCreateInfo);
-
+                
                 //We update the folder metadata
                 newItem["Title"] = folderUrls.ItemNormalizedPath;
                 newItem["Created"] = folder.CreationTimeUtc;
@@ -183,20 +183,16 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// From MSDocs - to investigate
+        /// Logic to copy file using file.add or StartUpload depending on file size
         /// </summary>
         /// <param name="ctx"></param>
         /// <param name="libraryName"></param>
         /// <param name="fileName"></param>
         /// <param name="fileChunkSizeInMB"></param>
-        /// <returns></returns>
-        public Microsoft.SharePoint.Client.File UploadFileSlicePerSlice(ClientContext ctx, string libraryName, string fileName, string itemNormalizedPath, int fileChunkSizeInMB = 3)
+        public void UploadFileSlicePerSlice(ClientContext ctx, string libraryName, string fileName, string itemNormalizedPath, int fileChunkSizeInMB = 3)
         {
             // Each sliced upload requires a unique ID.
             Guid uploadId = Guid.NewGuid();
-
-            // Get the name of the file.
-            string uniqueFileName = Path.GetFileName(fileName);
 
             // Get the folder to upload into. 
             List docs = ctx.Web.Lists.GetByTitle(libraryName);
@@ -231,8 +227,6 @@ namespace SPOMig
                     uploadFile = docs.RootFolder.Files.Add(fileInfo);
                     ctx.Load(uploadFile);
                     ctx.ExecuteQuery();
-                    // Return the file object for the uploaded file.
-                    return uploadFile;
                 }
             }
             else
@@ -306,9 +300,6 @@ namespace SPOMig
                                         // End sliced upload by calling FinishUpload.
                                         uploadFile = uploadFile.FinishUpload(uploadId, fileoffset, s);
                                         ctx.ExecuteQuery();
-
-                                        // Return the file object for the uploaded file.
-                                        return uploadFile;
                                     }
                                 }
                                 else
@@ -335,10 +326,7 @@ namespace SPOMig
                     }
                 }
             }
-
-            return null;
         }
-
 
         /// <summary>
         /// Copy File to a SharePoint Online library
@@ -392,7 +380,7 @@ namespace SPOMig
             {
                 //We copy the file and set metadata
                 //Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, false);
-                UploadFileSlicePerSlice(Context, "Documents", file.FullName, fileUrls.ServerRelativeUrl);
+                UploadFileSlicePerSlice(Context, list.Title, file.FullName, fileUrls.ServerRelativeUrl);
                 setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
 
                 //We update the CopyStatus accordingly
@@ -423,7 +411,7 @@ namespace SPOMig
                 {
                     //We copy the file and set metadata
                     //Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, true);
-                    UploadFileSlicePerSlice(Context, "Documents", file.FullName, fileUrls.ServerRelativeUrl);
+                    UploadFileSlicePerSlice(Context, list.Title, file.FullName, fileUrls.ServerRelativeUrl);
                     setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
 
                     //We update the CopyStatus accordingly
@@ -448,7 +436,7 @@ namespace SPOMig
                 {
                     //We copy the file and set metadata
                     //Microsoft.SharePoint.Client.File.SaveBinaryDirect(Context, fileUrls.ServerRelativeUrl, fileStream, true);
-                    UploadFileSlicePerSlice(Context, "Documents", file.FullName, fileUrls.ServerRelativeUrl);
+                    UploadFileSlicePerSlice(Context, list.Title, file.FullName, fileUrls.ServerRelativeUrl);
                     setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
 
                     //We update the CopyStatus accordingly
