@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core;
 using System.IO;
+using System.Configuration;
 
 namespace SPOMig.Windows
 {
@@ -30,17 +31,17 @@ namespace SPOMig.Windows
 
         private void Btn_Connect_Click(object sender, RoutedEventArgs e)
         {
-            string ID = Tb_AppId.Text;
-            string Sec = TB_AppSecret.Text;
+
+            string ID = ConfigurationManager.AppSettings["AppID"];
+            string Sec = ConfigurationManager.AppSettings["Secret"];
             string site = Tb_CsvFile.Text;
 
-            AuthenticationManager am = new AuthenticationManager();
-
-            using (ClientContext ctx = am.GetAppOnlyAuthenticatedContext(site, ID, Sec))
+            using (ClientContext ctx = new AuthenticationManager().GetAppOnlyAuthenticatedContext(site, ID, Sec))
             {
-                ClientContext context = ctx;
+                Web web = ctx.Web;
+                ctx.Load(web);
                 ctx.ExecuteQuery();
-                this.Context = context;
+                this.Context = ctx;
             }
 
             SPOLogic spol = new SPOLogic(Context);

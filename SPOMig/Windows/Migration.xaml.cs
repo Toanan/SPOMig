@@ -4,6 +4,7 @@ using System.Windows;
 using Microsoft.SharePoint.Client;
 using System.IO;
 using System.ComponentModel;
+using SPOMig.Windows;
 
 namespace SPOMig
 {
@@ -376,7 +377,7 @@ namespace SPOMig
         private void BtnHome_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();
-            MainWindow mw = new MainWindow();
+            Startup mw = new Startup();
             mw.Show();
             bw.Dispose();
             this.Close();

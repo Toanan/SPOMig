@@ -149,6 +149,8 @@ namespace SPOMig
             //If the folder does not exist we create it
             if (checkFolderExist(folderUrls.ServerRelativeUrl) == false)
             {
+
+                /*
                 //We create the folder ListITemCreationInformation
                 ListItemCreationInformation itemCreateInfo = new ListItemCreationInformation();
                 itemCreateInfo.UnderlyingObjectType = FileSystemObjectType.Folder;
@@ -170,6 +172,24 @@ namespace SPOMig
                 copyStat.Comment = "Folder not found online - created";
 
                 return copyStat;
+
+    */
+
+                
+
+                
+                var rootFolder = list.RootFolder;
+                Context.Load(rootFolder);
+                Context.ExecuteQuery();
+                var myFolder = rootFolder.Folders.Add(folderUrls.ServerRelativeUrl);
+                Context.ExecuteQuery();
+
+                //We update the CopyStatus accordingly
+                copyStat.Status = CopyStatus.ItemStatus.Created;
+                copyStat.Comment = "Folder not found online - created";
+
+                return copyStat;
+
             }
             //The folder allready exists
             else
