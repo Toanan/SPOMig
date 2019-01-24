@@ -201,23 +201,19 @@ namespace SPOMig
             ctx.Load(docs.RootFolder, f => f.ServerRelativeUrl);
             ctx.ExecuteQuery();
 
-            // File object.
+            // We create the file object
             Microsoft.SharePoint.Client.File uploadFile;
 
-            // Calculate block size in bytes.
+            // We calculate block size in bytes
             int blockSize = fileChunkSizeInMB * 1024 * 1024;
 
-            // Get the information about the folder that will hold the file.
-            ctx.Load(docs.RootFolder, f => f.ServerRelativeUrl);
-            ctx.ExecuteQuery();
-
-
-            // Get the size of the file.
+            // We retrieve the size of the file
             long fileSize = new FileInfo(fileName).Length;
 
+            //If local file size < block size
             if (fileSize <= blockSize)
             {
-                // Use regular approach.
+                // We use File.add method to upload
                 using (FileStream fs = new FileStream(fileName, FileMode.Open))
                 {
                     FileCreationInformation fileInfo = new FileCreationInformation();
@@ -231,7 +227,7 @@ namespace SPOMig
             }
             else
             {
-                // Use large file upload approach.
+                // We use the large file method
                 ClientResult<long> bytesUploaded = null;
 
                 FileStream fs = null;
@@ -248,12 +244,12 @@ namespace SPOMig
                         bool first = true;
                         bool last = false;
 
-                        // Read data from file system in blocks. 
+                        // We read the local file by block 
                         while ((bytesRead = br.Read(buffer, 0, buffer.Length)) > 0)
                         {
                             totalBytesRead = totalBytesRead + bytesRead;
 
-                            // You've reached the end of the file.
+                            // We check if we read the last block 
                             if (totalBytesRead == fileSize)
                             {
                                 last = true;
@@ -262,60 +258,58 @@ namespace SPOMig
                                 Array.Copy(buffer, 0, lastBuffer, 0, bytesRead);
                             }
 
+                            // We check if we read the first block 
                             if (first)
                             {
                                 using (MemoryStream contentStream = new MemoryStream())
                                 {
-                                    // Add an empty file.
+                                    // We add an empty file
                                     FileCreationInformation fileInfo = new FileCreationInformation();
                                     fileInfo.ContentStream = contentStream;
                                     fileInfo.Url = itemNormalizedPath;
                                     fileInfo.Overwrite = true;
                                     uploadFile = docs.RootFolder.Files.Add(fileInfo);
 
-                                    // Start upload by uploading the first slice. 
+                                    // We start upload by uploading the first block 
                                     using (MemoryStream s = new MemoryStream(buffer))
                                     {
-                                        // Call the start upload method on the first slice.
+                                        // Call the start upload method on the first block
                                         bytesUploaded = uploadFile.StartUpload(uploadId, s);
                                         ctx.ExecuteQuery();
-                                        // fileoffset is the pointer where the next slice will be added.
+                                        // We set fileoffset as the pointer where the next slice will be added
                                         fileoffset = bytesUploaded.Value;
                                     }
-
-                                    // You can only start the upload once.
                                     first = false;
                                 }
                             }
                             else
                             {
-                                // Get a reference to your file.
+                                // We get a reference to our file
                                 uploadFile = ctx.Web.GetFileByServerRelativeUrl(itemNormalizedPath);
 
+                                // We check if it is the last block
                                 if (last)
                                 {
-                                    // Is this the last slice of data?
                                     using (MemoryStream s = new MemoryStream(lastBuffer))
                                     {
-                                        // End sliced upload by calling FinishUpload.
+                                        // We end the upload by calling FinishUpload
                                         uploadFile = uploadFile.FinishUpload(uploadId, fileoffset, s);
                                         ctx.ExecuteQuery();
                                     }
                                 }
-                                else
+                                else // We continue the upload
                                 {
                                     using (MemoryStream s = new MemoryStream(buffer))
                                     {
-                                        // Continue sliced upload.
                                         bytesUploaded = uploadFile.ContinueUpload(uploadId, fileoffset, s);
                                         ctx.ExecuteQuery();
-                                        // Update fileoffset for the next slice.
+                                        // Update fileoffset for the next block.
                                         fileoffset = bytesUploaded.Value;
                                     }
                                 }
                             }
 
-                        } // while ((bytesRead = br.Read(buffer, 0, buffer.Length)) > 0)
+                        } 
                     }
                 }
                 finally
@@ -329,7 +323,7 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Copy File to a SharePoint Online library
+        /// This method provide the logic to compare local and online file to choose either to copy or not
         /// </summary>
         /// <param name="file">File to copy</param>
         /// <param name="list">The Targeted SharePoint Online Library</param>
