@@ -19,9 +19,9 @@ namespace SPOMig
         #endregion
 
         #region Ctor
-        public Reporting(string libName)
+        public Reporting(string libName, string siteUrl)
         {
-            createFiles(libName);
+            createFiles(libName, siteUrl);
         }
         #endregion
 
@@ -32,7 +32,7 @@ namespace SPOMig
         /// TODO : Create the log file
         /// </summary>
         /// <param name="libName">SharePoint Online library name</param>
-        private void createFiles (string libName)
+        private void createFiles (string libName, string siteUrl)
         {
             //We create the result file name and ensure the Result folder exists
             string resultFilePath = setFilePath(libName, reportFileType.Result);
@@ -49,7 +49,7 @@ namespace SPOMig
             File.WriteAllText(resultFilePath, resultHeader.ToString(), Encoding.UTF8);
 
             //We create the log file by writing process start
-            var logStartMessage = $"[Process beggin]Destination Library : {libName}";
+            var logStartMessage = $"[Process beggin]Destination Site : {siteUrl} | Destination Library : {libName}";
             CopyLog log = new CopyLog(logStartMessage);
             writeLog(log);
         }

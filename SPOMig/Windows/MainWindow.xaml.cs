@@ -85,8 +85,16 @@ namespace SPOMig
                 {
                     SharePointOnlineCredentials credentials = new SharePointOnlineCredentials(UserName, PassWord);
                     ctx.Credentials = credentials;
+
+
+                    Web web = ctx.Web;
+                    ctx.Load(web, w => w.ServerRelativeUrl);
+
                     this.Context = ctx;
+
+
                     SPOLogic Context = new SPOLogic(ctx);
+
                     //We check if the SPO site is a OneDrive Url, and process accordingly
                     if (SiteUrl.Contains("/personal/"))
                     {

@@ -86,7 +86,7 @@ namespace SPOMig
         private void bw_Dowork(object sender, DoWorkEventArgs e)
         {
             //[RESULT/LOG] We instanciate the repporting object
-            Reporting repport = new Reporting(this.DocLib);
+            Reporting repport = new Reporting(this.DocLib, this.Context.Web.ServerRelativeUrl);
             //[LOG:Verbose] We create the log object and log Local Path formating
             CopyLog log = new CopyLog(CopyLog.Status.Verbose, "Local path formating", LocalPath, "");
             repport.writeLog(log);

@@ -1,0 +1,15 @@
+﻿<Window x:Class="SPOMig.Windows.Startup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SPOMig.Windows"
+        mc:Ignorable="d"
+        Title="Startup" Height="450" Width="800">
+    <Grid>
+        <Label Name="Lb_Granular" Content="Granular migration" Margin="126,129,551.6,253"></Label>
+        <Button Name="Btn_GranularScenario" Content="Granular Scenario" Margin="104,249,568.6,100" Click="Btn_GranularScenario_Click"></Button>
+        <Label Name="Lb_BulkScenario" Content="Bulk Scenario" Margin="517,129,190.6,254"></Label>
+        <Button Name="Btn_BulkScenario" Content="Bulk Scenario" Margin="517,249,155.6,100" Click="Btn_BulkScenario_Click"></Button>
+    </Grid>
+</Window>
