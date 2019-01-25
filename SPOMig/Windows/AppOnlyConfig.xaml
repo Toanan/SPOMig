@@ -1,0 +1,22 @@
+﻿<Window x:Class="SPOMig.Windows.AppOnlyConfig"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SPOMig.Windows"
+        mc:Ignorable="d"
+        Title="AppOnlyConfig" Height="240.193" Width="800">
+    <Grid>
+        <Label Name="Lb_Top" Content="This application is not yet configure for App Only authentication" Margin="135,18,76.6,148.4" />
+        <Label Margin="489,18,185.6,148.4">
+            <Hyperlink NavigateUri="http://www.google.com">
+                More information
+            </Hyperlink>
+        </Label>
+        <Label Name="Lb_AppID" Content="App ID" Margin="30,64,663.6,116.4"/>
+        <TextBox Name="Tb_AppID" Margin="135,67,104.6,116.4" />
+        <Label Name="Lb_AppSecret" Content="App Secret" Margin="30,117,674.6,54.4" />
+        <TextBox Name="Tb_AppSecret" Margin="135,121,104.6,54.4" />
+        <Button Name="Btn_AppOnlyCfg" Content="Save" Margin="381,176,321.6,10.4" Click="Btn_AppOnlyCfg_Click" />
+    </Grid>
+</Window>

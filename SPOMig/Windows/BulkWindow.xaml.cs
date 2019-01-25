@@ -18,16 +18,27 @@ using System.Configuration;
 
 namespace SPOMig.Windows
 {
+
     /// <summary>
     /// Logique d'interaction pour BulkWindow.xaml
     /// </summary>
     public partial class BulkWindow : Window
     {
+        #region Props
+        public string AppID { get; set; }
+        public string AppSecret { get; set; }
+        #endregion
+
+        #region Ctor
+
         public ClientContext Context { get; set; }
         public BulkWindow()
         {
             InitializeComponent();
         }
+
+        #endregion
+
 
         private void Btn_Connect_Click(object sender, RoutedEventArgs e)
         {

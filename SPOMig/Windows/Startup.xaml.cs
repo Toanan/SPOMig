@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Configuration;
 
 namespace SPOMig.Windows
 {
@@ -35,9 +36,21 @@ namespace SPOMig.Windows
         private void Btn_BulkScenario_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();
-            BulkWindow bw = new BulkWindow();
-            bw.Show();
-            this.Close();
+
+            //We check if appId and secret are configured
+            if (string.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["AppID"]) || string.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["Secret"]))
+            {
+                this.Hide();
+                AppOnlyConfig appConfig = new AppOnlyConfig();
+                appConfig.Show();
+                this.Close();
+            }
+            else
+            {
+                BulkWindow bw = new BulkWindow();
+                bw.Show();
+                this.Close();
+            }
         }
     }
 }
