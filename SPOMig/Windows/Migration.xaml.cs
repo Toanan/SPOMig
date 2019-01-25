@@ -100,6 +100,7 @@ namespace SPOMig
                 //[LOG:OK] Local Path formating : Log success
                 log.ActionStatus = CopyLog.Status.OK;
                 repport.writeLog(log);
+
                 //[LOG:Verbose] Local file retrieve
                 log.update(CopyLog.Status.Verbose, "Local file retrieve", LocalPath, "");
                 repport.writeLog(log);
@@ -126,6 +127,17 @@ namespace SPOMig
                 log.ActionStatus = CopyLog.Status.OK;
                 repport.writeLog(log);
 
+                //[LOG:Verbose] Online ListItem retrieve
+                log.update(CopyLog.Status.Verbose, "Online ListItem retrieve", LocalPath, "");
+                repport.writeLog(log);
+
+                // We retrieve all listitems in the library
+                List<ListItem> onlineListItem = ctx.GetAllDocumentsInaLibrary(this.DocLib);
+
+                //[LOG:OK] Online ListItem retrieve
+                log.ActionStatus = CopyLog.Status.OK;
+                repport.writeLog(log);
+
                 #region Folder Creation
 
                 //[LOG:Title] Folder creation beggins
@@ -141,7 +153,7 @@ namespace SPOMig
                     i++;
                     double percentage = (double)i / folders.Count;
                     int advancement = Convert.ToInt32(percentage * 100);
-                    bw.ReportProgress(advancement, $"Copying folders {advancement}%\n{i}/{folders.Count}");
+                    bw.ReportProgress(advancement, $"Checking folders {advancement}%\n{i}/{folders.Count}");
 
                     //We check for pending cancellation
                     if (bw.CancellationPending == true)
@@ -162,7 +174,7 @@ namespace SPOMig
                         repport.writeLog(log);
 
                         //We process the folder
-                        CopyStatus copyStatus = ctx.copyFolderToSPO(folder, list, LocalPath);
+                        CopyStatus copyStatus = ctx.copyFolderToSPO(folder, list, LocalPath, onlineListItem);
 
                         //[LOG:OK] Folder Creation
                         log.ActionStatus = CopyLog.Status.OK;
@@ -221,7 +233,7 @@ namespace SPOMig
                         repport.writeLog(log);
 
                         //We copy the file
-                        CopyStatus copyStatus = ctx.copyFileToSPO(file, list, LocalPath);
+                        CopyStatus copyStatus = ctx.copyFileToSPO(file, list, LocalPath, onlineListItem);
 
                         //[LOG:OK] File Upload
                         log.ActionStatus = CopyLog.Status.OK;

@@ -57,8 +57,15 @@ namespace SPOMig.Windows
 
             SPOLogic spol = new SPOLogic(Context);
 
-            ListCollection lists = spol.getLists();
-            MessageBox.Show(lists.Count.ToString());           
+            var items = spol.GetAllDocumentsInaLibrary("Documents");
+
+            foreach (var item in items)
+            {
+                System.IO.File.AppendAllText(@"c:/listallfile.txt", $"{item["Title"]},{item["FileRef"]},{item["FileLeafRef"]}");
+            }
+
+
+
         }
     }
 }

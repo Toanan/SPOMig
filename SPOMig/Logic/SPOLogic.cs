@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.SharePoint.Client;
+using System.Configuration;
+using System.Linq;
 
 namespace SPOMig
 {
@@ -18,7 +21,7 @@ namespace SPOMig
         public SPOLogic(ClientContext ctx)
         {
             this.Context = ctx;
-            this.hashColumn = "FileHash";
+            this.hashColumn = ConfigurationManager.AppSettings["HashColumn"];
         }
         #endregion
 
@@ -124,13 +127,51 @@ namespace SPOMig
         }
 
         /// <summary>
+        /// Retrieve all listitems in a library
+        /// </summary>
+        /// <returns></returns>
+        public List<ListItem> GetAllDocumentsInaLibrary(string libName)
+        {
+            List<ListItem> items = new List<ListItem>();
+            ClientContext ctx = this.Context;
+            //ctx.Credentials = Your Credentials
+            ctx.Load(ctx.Web, a => a.Lists);
+            ctx.ExecuteQuery();
+
+            List list = ctx.Web.Lists.GetByTitle("Documents");
+            ListItemCollectionPosition position = null;
+            // Page Size: 100
+            int rowLimit = 100;
+            var camlQuery = new CamlQuery();
+            camlQuery.ViewXml = @"<View Scope='RecursiveAll'>
+            <Query>
+                <OrderBy Override='TRUE'><FieldRef Name='ID'/></OrderBy>
+            </Query>
+            <ViewFields>
+            <FieldRef Name='Title'/><FieldRef Name='Modified' /><FieldRef Name='Editor' /><FieldRef Name='FileLeafRef' /><FieldRef Name='FileRef' /><FieldRef Name='" + this.hashColumn + "' /></ViewFields><RowLimit Paged='TRUE'>" + rowLimit + "</RowLimit></View>";
+            do
+            {
+                ListItemCollection listItems = null;
+                camlQuery.ListItemCollectionPosition = position;
+                listItems = list.GetItems(camlQuery);
+                ctx.Load(listItems);
+                ctx.ExecuteQuery();
+                position = listItems.ListItemCollectionPosition;
+                items.AddRange(listItems.ToList());
+            }
+            while (position != null);
+            
+            return items;
+        }
+
+        /// <summary>
         /// Copy folder to a SharePoint Online Site library
         /// </summary>
         /// <param name="folder">Folder to copy</param>
         /// <param name="list">List to copy folder to</param>
         /// <param name="localPath">Local Path selected by user</param>
         /// <returns>CopyStatus - the result from processing</returns>
-        public CopyStatus copyFolderToSPO(DirectoryInfo folder, List list, string localPath)
+        public CopyStatus copyFolderToSPO(DirectoryInfo folder, List list, string localPath, List<ListItem> onlineListItem)
         {
             //We instanciate the CopyStatus object to return
             CopyStatus copyStat = new CopyStatus
@@ -147,7 +188,7 @@ namespace SPOMig
             if (folderUrls.ItemNormalizedPath == "") return null;
 
             //If the folder does not exist we create it
-            if (checkFolderExist(folderUrls.ServerRelativeUrl) == false)
+            if (checkFolderExist(folderUrls.ServerRelativeUrl, onlineListItem) == false)
             {
 
                 /*
@@ -160,10 +201,8 @@ namespace SPOMig
                 ListItem newItem = list.AddItem(itemCreateInfo);
                 
                 //We update the folder metadata
-                newItem["Title"] = folderUrls.ItemNormalizedPath;
-                newItem["Created"] = folder.CreationTimeUtc;
-                newItem["Modified"] = folder.CreationTimeUtc;
-                newItem.Update();
+
+                
 
                 Context.ExecuteQuery();
 
@@ -182,6 +221,13 @@ namespace SPOMig
                 Context.Load(rootFolder);
                 Context.ExecuteQuery();
                 var myFolder = rootFolder.Folders.Add(folderUrls.ServerRelativeUrl);
+                Context.ExecuteQuery();
+
+                //We update metadate
+                ListItem listitemFolder = Context.Web.GetListItem(folderUrls.ServerRelativeUrl);
+                listitemFolder["Created"] = folder.CreationTimeUtc;
+                listitemFolder["Modified"] = folder.CreationTimeUtc;
+                listitemFolder.Update();
                 Context.ExecuteQuery();
 
                 //We update the CopyStatus accordingly
@@ -349,7 +395,7 @@ namespace SPOMig
         /// <param name="list">The Targeted SharePoint Online Library</param>
         /// <param name="localPath">Local Path selected by user</param>
         /// <returns>CopyStatus - The result of processing</returns>
-        public CopyStatus copyFileToSPO(FileInfo file, List list, string localPath)
+        public CopyStatus copyFileToSPO(FileInfo file, List list, string localPath, List<ListItem> onlineListItem)
         {
             //We instanciate the CopyStatus object to return feedback from processing
             CopyStatus copystat = new CopyStatus()
@@ -386,7 +432,7 @@ namespace SPOMig
                 itemUrl = siteURL + "/" + list.RootFolder.Name + "/" + fileUrls.ItemNormalizedPath;
 
                 //We retrive the target file length (does not exist == 0)
-                targetFileStat = checkItemExist(itemUrl);
+                targetFileStat = checkListItemExist(fileUrls.ServerRelativeUrl, onlineListItem);
             }
 
             //If the target item does not exist, we copy the file and set metadata
@@ -537,23 +583,16 @@ namespace SPOMig
         /// </summary>
         /// <param name="itemPath"></param>
         /// <returns>Yes or no</returns>
-        private bool checkFolderExist (string itemPath)
+        private bool checkFolderExist (string itemPath, List<ListItem> onlineListItem)
         {
-            try
+            foreach (var item in onlineListItem)
             {
-                ListItem itemtoCheck = Context.Web.GetListItem(itemPath);
-                Context.Load(itemtoCheck);
-                Context.ExecuteQuery();               
-                return true;
-            }
-            catch (ServerException ex)
-            {
-                if (ex.ServerErrorTypeName == "System.IO.FileNotFoundException")
+                if ((string)item["FileRef"] == itemPath )
                 {
-                    return false;
+                    return true;
                 }
-                throw;
             }
+            return false;
         }
         
         /// <summary>
@@ -561,53 +600,34 @@ namespace SPOMig
         /// </summary>
         /// <param name="itemPath"></param>
         /// <returns>OnlineFileStatus (FileFound?,HashFound?,HashValue)</returns>
-        private OnlineFileStatus checkItemExist(string itemPath)
+        private OnlineFileStatus checkListItemExist(string itemPath, List<ListItem> onlineListItem)
         {
             //We instanciate the OnlineFileStatus object
             OnlineFileStatus status = new OnlineFileStatus();
-            try
-            {
-                //We try to retrieve the ListItem
-                ListItem file = Context.Web.GetListItem(itemPath);
-                Context.Load(file);
-                Context.ExecuteQuery();
-                //At this point we found the file so we update the OnlineFileStatus accordingly
-                status.FileFound = OnlineFileStatus.FileStatus.Found;
 
-                //We try to retrieve the value from the hashColumn
-                string fileHash = file[this.hashColumn].ToString();
-                //At this point we found the file so we update the OnlineFileStatus accordingly
-                status.HashFound = OnlineFileStatus.HashStatus.Found;
-                status.Hash = fileHash;
-
-                return status;
-            }
-            catch (ServerException ex)
+            foreach (var item in onlineListItem) 
             {
-                //We isolate the FileNotFound exception
-                if (ex.ServerErrorTypeName == "System.IO.FileNotFoundException")
+                // If we find the listitem
+                if ((string)item["FileRef"] == itemPath)
                 {
-                    //We update the OnlineFileStatus accordingly
-                    status.FileFound = OnlineFileStatus.FileStatus.NotFound;
-                    status.HashFound = OnlineFileStatus.HashStatus.NotFound;
-                    status.Hash = null;
+                    //At this point we found the file so we update the OnlineFileStatus accordingly
+                    status.FileFound = OnlineFileStatus.FileStatus.Found;
+
+                    //We try to retrieve the value from the hashColumn
+                    string fileHash = item[this.hashColumn].ToString();
+                    //At this point we found the HashColumn so we update the OnlineFileStatus accordingly
+                    status.HashFound = OnlineFileStatus.HashStatus.Found;
+                    status.Hash = fileHash;
 
                     return status;
                 }
-                throw ex;
             }
-            catch (Exception ex)
-            {
-                //We isolate the Field is null exception => /!\ To improve /!\
-                if (ex.HResult == -2147467261)
-                {
-                    //We update the OnlineFileStatus accordingly
-                    status.HashFound = OnlineFileStatus.HashStatus.NotFound;
-                    status.Hash = null;
-                    return status;
-                }
-                throw ex;
-            }
+            //We update the OnlineFileStatus accordingly
+            status.FileFound = OnlineFileStatus.FileStatus.NotFound;
+            status.HashFound = OnlineFileStatus.HashStatus.NotFound;
+            status.Hash = null;
+
+            return status;
         }
 
         /// <summary>
