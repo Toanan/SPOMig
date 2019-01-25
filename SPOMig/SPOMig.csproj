@@ -218,6 +218,9 @@
     <Compile Include="Logic\ItemUrls.cs" />
     <Compile Include="Logic\OnlineFileStatus.cs" />
     <Compile Include="Logic\Reporting.cs" />
+    <Compile Include="Windows\AppOnlyConfig.xaml.cs">
+      <DependentUpon>AppOnlyConfig.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\BulkWindow.xaml.cs">
       <DependentUpon>BulkWindow.xaml</DependentUpon>
     </Compile>
@@ -228,6 +231,10 @@
     <Compile Include="Windows\Startup.xaml.cs">
       <DependentUpon>Startup.xaml</DependentUpon>
     </Compile>
+    <Page Include="Windows\AppOnlyConfig.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\BulkWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
