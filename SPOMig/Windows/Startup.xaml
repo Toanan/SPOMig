@@ -11,6 +11,6 @@
         <Label Name="Lb_Granular" Content="Using a user login" Margin="104,174,546.6,208"></Label>
         <Button Name="Btn_GranularScenario" Content="User Login" Margin="104,249,568.6,100" Click="Btn_GranularScenario_Click"></Button>
         <Label Name="Lb_BulkScenario" Content="Using an App Only Login" Margin="517,174,109.6,209"></Label>
-        <Button Name="Btn_BulkScenario" Content="App Login" Margin="517,249,155.6,100" Click="Btn_BulkScenario_Click"></Button>
+        <Button Name="Btn_BulkScenario" Content="App Only Login" Margin="517,249,155.6,100" Click="Btn_BulkScenario_Click"></Button>
     </Grid>
 </Window>
