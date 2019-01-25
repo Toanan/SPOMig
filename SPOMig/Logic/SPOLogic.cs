@@ -608,13 +608,27 @@ namespace SPOMig
                     //At this point we found the file so we update the OnlineFileStatus accordingly
                     status.FileFound = OnlineFileStatus.FileStatus.Found;
 
-                    //We try to retrieve the value from the hashColumn
-                    string fileHash = item[this.hashColumn].ToString();
-                    //At this point we found the HashColumn so we update the OnlineFileStatus accordingly
-                    status.HashFound = OnlineFileStatus.HashStatus.Found;
-                    status.Hash = fileHash;
-
-                    return status;
+                    try
+                    {
+                        //We try to retrieve the value from the hashColumn
+                        string fileHash = item[this.hashColumn].ToString();
+                        if (string.IsNullOrWhiteSpace(fileHash))
+                        {
+                            status.HashFound = OnlineFileStatus.HashStatus.NotFound;
+                            status.Hash = null;
+                            return status;
+                        }
+                        //At this point we found the HashColumn so we update the OnlineFileStatus accordingly
+                        status.HashFound = OnlineFileStatus.HashStatus.Found;
+                        status.Hash = fileHash;
+                        return status;
+                    }
+                    catch
+                    {
+                        status.HashFound = OnlineFileStatus.HashStatus.NotFound;
+                        status.Hash = null;
+                        return status;
+                    }
                 }
             }
             //We update the OnlineFileStatus accordingly
