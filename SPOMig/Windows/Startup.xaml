@@ -7,9 +7,10 @@
         mc:Ignorable="d"
         Title="Startup" Height="450" Width="800">
     <Grid>
-        <Label Name="Lb_Granular" Content="Granular migration" Margin="126,129,551.6,253"></Label>
+        <Label Name="Lb_Top" Content="Welcome! How would you like to authenticate ?" Margin="229,43,223.6,336" />
+        <Label Name="Lb_Granular" Content="Using a user login" Margin="104,174,546.6,208"></Label>
         <Button Name="Btn_GranularScenario" Content="User Login" Margin="104,249,568.6,100" Click="Btn_GranularScenario_Click"></Button>
-        <Label Name="Lb_BulkScenario" Content="App Login" Margin="517,129,190.6,254"></Label>
+        <Label Name="Lb_BulkScenario" Content="Using an App Only Login" Margin="517,174,109.6,209"></Label>
         <Button Name="Btn_BulkScenario" Content="App Login" Margin="517,249,155.6,100" Click="Btn_BulkScenario_Click"></Button>
     </Grid>
 </Window>
