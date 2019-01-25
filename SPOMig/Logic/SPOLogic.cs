@@ -411,28 +411,23 @@ namespace SPOMig
             DateTime modified;
             string localFileLength;
             string localFileHash;
-            string siteURL;
-            string itemUrl;
             OnlineFileStatus targetFileStat;
+            
+            // We retrieve the normalized Urls(ItemNormalized path and ServerRelativeUrl)
+            fileUrls = formatUrl(file, list, localPath);
 
-            //using the FileStream to dispose when processing is over
+            //We retrieve the target file status
+            targetFileStat = checkListItemExist(fileUrls.ServerRelativeUrl, onlineListItem);
+
+            //We retrieve the local file metadata
+            created = file.CreationTimeUtc;
+            modified = file.LastWriteTimeUtc;
+            localFileLength = file.Length.ToString();
+
+            //using the FileStream, we compute the file hash
             using (FileStream fileStream = new FileStream(file.FullName, FileMode.Open))
             {
-                //We retrieve the normalized Urls (ItemNormalized path and ServerRelativeUrl)
-                fileUrls = formatUrl(file, list, localPath);
-
-                //We retrieve the local file metadata
-                created = file.CreationTimeUtc;
-                modified = file.LastWriteTimeUtc;
-                localFileLength = file.Length.ToString();
                 localFileHash = FileLogic.hashFromLocal(fileStream);
-
-                //We retrieve the ListItem URL to check if it exists on the SharePoint Online library
-                siteURL = getSiteURL();
-                itemUrl = siteURL + "/" + list.RootFolder.Name + "/" + fileUrls.ItemNormalizedPath;
-
-                //We retrive the target file length (does not exist == 0)
-                targetFileStat = checkListItemExist(fileUrls.ServerRelativeUrl, onlineListItem);
             }
 
             //If the target item does not exist, we copy the file and set metadata
@@ -452,13 +447,13 @@ namespace SPOMig
             //If target item has no hash, we compare lenght to check if copy is necessary
             else if (targetFileStat.HashFound == OnlineFileStatus.HashStatus.NotFound)
             {
-                //We retrive the target file length
+                //We retrieve the target file length
                 string targetFileLength = getFileLenght(fileUrls.ServerRelativeUrl);
                     
                 //Local and Online Files are the same length, se we do not overwrite
                 if (localFileLength == targetFileLength)
                 {
-                    //We update metadata
+                    //We update metadata to push the right value in the FileHash column
                     setUploadedFileMetadata(fileUrls.ServerRelativeUrl, created, modified, localFileHash);
 
                     //We update the CopyStatus accordingly
