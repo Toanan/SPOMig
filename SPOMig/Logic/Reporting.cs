@@ -29,7 +29,6 @@ namespace SPOMig
 
         /// <summary>
         /// Create the result csv file and set header
-        /// TODO : Create the log file
         /// </summary>
         /// <param name="libName">SharePoint Online library name</param>
         private void createFiles (string libName, string siteUrl)

@@ -5,10 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SPOMig.Windows"
         mc:Ignorable="d"
-        Title="BulkWindow" Height="450" Width="800">
+        Title="BulkWindow" Height="450" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Label Name="Lb_CsvFile" Content="CSV File Path" Margin="55,21,644,361"></Label>
-        <TextBox Name="Tb_CsvFile" Margin="173,20,69,361"></TextBox>
+        <Label Name="Lb_CsvFile" Content="CSV File Path" Margin="55,53,643.8,329"></Label>
+        <TextBox Name="Tb_CsvFile" Margin="173,52,68.8,329"></TextBox>
         <Button Name="Btn_Connect" Content="Start Bulk Migration" Margin="314,101,351,249" Click="Btn_Connect_Click"></Button>
+        <Button Name="Btn_Home" Content="Back to loggin" HorizontalAlignment="Left" Margin="678,11,0,0" VerticalAlignment="Top" Width="85" Click="BtnHome_Click"/>
     </Grid>
 </Window>

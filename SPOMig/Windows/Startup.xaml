@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SPOMig.Windows"
         mc:Ignorable="d"
-        Title="Startup" Height="450" Width="800">
+        Title="Startup" Height="450" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <Label Name="Lb_Top" Content="Welcome! How would you like to authenticate ?" Margin="229,43,223.6,336" />
         <Label Name="Lb_Granular" Content="Using a user login" Margin="104,174,546.6,208"></Label>

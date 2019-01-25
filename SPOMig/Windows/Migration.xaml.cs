@@ -121,6 +121,7 @@ namespace SPOMig
                 repport.writeLog(log);
 
                 //We enable Folder creation for the SharePoint Online library and ensure the Hash column exist
+                bw.ReportProgress(0, "Checking Library");
                 List list = ctx.setLibraryReadyForPRocessing(this.DocLib);
 
                 //[LOG:OK] Checking library
@@ -132,6 +133,7 @@ namespace SPOMig
                 repport.writeLog(log);
 
                 // We retrieve all listitems in the library
+                bw.ReportProgress(0, "Retrieving ListItems");
                 List<ListItem> onlineListItem = ctx.GetAllDocumentsInaLibrary(this.DocLib);
 
                 //[LOG:OK] Online ListItem retrieve
@@ -212,7 +214,7 @@ namespace SPOMig
                     i++;
                     double percentage = (double)i / files.Count;
                     int advancement = Convert.ToInt32(percentage * 100);
-                    bw.ReportProgress(advancement, $"Copying files {advancement}%\n{i}/{files.Count}");
+                    bw.ReportProgress(advancement, $"Checking files {advancement}%\n{i}/{files.Count}");
 
                     //Check if Cancellation is pending
                     if (bw.CancellationPending == true)

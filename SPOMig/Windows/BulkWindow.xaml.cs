@@ -1,19 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core;
-using System.IO;
 using System.Configuration;
 
 namespace SPOMig.Windows
@@ -58,14 +46,15 @@ namespace SPOMig.Windows
             SPOLogic spol = new SPOLogic(Context);
 
             var items = spol.GetAllDocumentsInaLibrary("Documents");
+            MessageBox.Show(items.Count.ToString());
+        }
 
-            foreach (var item in items)
-            {
-                System.IO.File.AppendAllText(@"c:/listallfile.txt", $"{item["Title"]},{item["FileRef"]},{item["FileLeafRef"]}");
-            }
-
-
-
+        private void BtnHome_Click(object sender, RoutedEventArgs e)
+        {
+            this.Hide();
+            Startup mw = new Startup();
+            mw.Show();
+            this.Close();
         }
     }
 }
