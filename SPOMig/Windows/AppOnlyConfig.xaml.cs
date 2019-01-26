@@ -20,9 +20,19 @@ namespace SPOMig.Windows
     /// </summary>
     public partial class AppOnlyConfig : Window
     {
+        public Configuration cfg { get; set; }
+
         public AppOnlyConfig()
         {
             InitializeComponent();
+
+            string appPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string appName = "SPOMig";
+
+            ExeConfigurationFileMap configMap = new ExeConfigurationFileMap();
+            configMap.ExeConfigFilename = $"{appPath}/{appName}/SPOMig.cfg";
+            Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
+            this.cfg = config;
         }
 
         /// <summary>
@@ -35,21 +45,20 @@ namespace SPOMig.Windows
             AddUpdateAppSettings("AppID", Tb_AppID.Text);
             AddUpdateAppSettings("Secret", Tb_AppSecret.Text);
             this.Hide();
-            BulkWindow bulkWindow = new BulkWindow();
+            BulkWindow bulkWindow = new BulkWindow(cfg);
             bulkWindow.Show();
             this.Close();
         }
 
 
-        static void AddUpdateAppSettings(string key, string value)
+        private void AddUpdateAppSettings(string key, string value)
         {
             try
             {
-                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var settings = configFile.AppSettings.Settings;
-                settings.Add(key, value);
-                configFile.Save(ConfigurationSaveMode.Modified);
-                ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
+                cfg.AppSettings.Settings.Remove(key);
+                cfg.AppSettings.Settings.Add(key, value); 
+                cfg.Save(ConfigurationSaveMode.Modified);
+                ConfigurationManager.RefreshSection(cfg.AppSettings.SectionInformation.Name);
             }
             catch (ConfigurationErrorsException ex)
             {

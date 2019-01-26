@@ -36,9 +36,14 @@ namespace SPOMig.Windows
         private void Btn_BulkScenario_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();
+            string appPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string appName = "SPOMig";
+            string appCfgPath = $"{appPath}/{appName}/SPOMig.cfg";
+            ExeConfigurationFileMap configMap = new ExeConfigurationFileMap();
+            configMap.ExeConfigFilename = appCfgPath;
+            Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
 
-            //We check if appId and secret are configured
-            if (string.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["AppID"]) || string.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["Secret"]))
+            if (!System.IO.File.Exists(appCfgPath))
             {
                 this.Hide();
                 AppOnlyConfig appConfig = new AppOnlyConfig();
@@ -47,7 +52,7 @@ namespace SPOMig.Windows
             }
             else
             {
-                BulkWindow bw = new BulkWindow();
+                BulkWindow bw = new BulkWindow(config);
                 bw.Show();
                 this.Close();
             }

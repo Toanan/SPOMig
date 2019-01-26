@@ -11,5 +11,6 @@
         <TextBox Name="Tb_CsvFile" Margin="173,52,68.8,329"></TextBox>
         <Button Name="Btn_Connect" Content="Start Bulk Migration" Margin="314,101,351,249" Click="Btn_Connect_Click"></Button>
         <Button Name="Btn_Home" Content="Back to loggin" HorizontalAlignment="Left" Margin="678,11,0,0" VerticalAlignment="Top" Width="85" Click="BtnHome_Click"/>
+        <Button Name="Btn_Config" Content="Configure Auth" Margin="548,11,131,378" Click="Btn_Config_Click" />
     </Grid>
 </Window>

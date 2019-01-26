@@ -86,30 +86,21 @@ namespace SPOMig
                     SharePointOnlineCredentials credentials = new SharePointOnlineCredentials(UserName, PassWord);
                     ctx.Credentials = credentials;
 
-
-                    Web web = ctx.Web;
-                    ctx.Load(web, w => w.ServerRelativeUrl);
-
+                    ctx.Load(ctx.Web, w => w.ServerRelativeUrl);
                     this.Context = ctx;
 
-
-                    SPOLogic Context = new SPOLogic(ctx);
+                    SPOLogic spol = new SPOLogic(ctx);
 
                     //We check if the SPO site is a OneDrive Url, and process accordingly
                     if (SiteUrl.Contains("/personal/"))
                     {
-                        List odlists = ctx.Web.Lists.GetByTitle("Documents");
-                        ctx.Load(odlists);
-                        ctx.ExecuteQuery();
-                        this.ODLibrary = odlists;
+                        this.ODLibrary = spol.getODList();
                     }
                     //Else we have a SPO Site Url, and process accordingly
                     else
                     {
-                        ListCollection lists = Context.getLists();
-                        this.Lists = lists;
+                        this.Lists = spol.getLists();
                     }
-                    
                 }
             }
             catch (Exception ex)

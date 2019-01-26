@@ -15,14 +15,17 @@ namespace SPOMig.Windows
         #region Props
         public string AppID { get; set; }
         public string AppSecret { get; set; }
+        public Configuration Config { get; set; }
         #endregion
 
         #region Ctor
 
         public ClientContext Context { get; set; }
-        public BulkWindow()
+
+        public BulkWindow(Configuration cfg)
         {
             InitializeComponent();
+            this.Config = cfg;
         }
 
         #endregion
@@ -31,8 +34,8 @@ namespace SPOMig.Windows
         private void Btn_Connect_Click(object sender, RoutedEventArgs e)
         {
 
-            string ID = ConfigurationManager.AppSettings["AppID"];
-            string Sec = ConfigurationManager.AppSettings["Secret"];
+            string ID = Config.AppSettings.Settings["AppID"].Value;
+            string Sec = Config.AppSettings.Settings["Secret"].Value;
             string site = Tb_CsvFile.Text;
 
             using (ClientContext ctx = new AuthenticationManager().GetAppOnlyAuthenticatedContext(site, ID, Sec))
@@ -54,6 +57,14 @@ namespace SPOMig.Windows
             this.Hide();
             Startup mw = new Startup();
             mw.Show();
+            this.Close();
+        }
+
+        private void Btn_Config_Click(object sender, RoutedEventArgs e)
+        {
+            this.Hide();
+            AppOnlyConfig appConfig = new AppOnlyConfig();
+            appConfig.Show();
             this.Close();
         }
     }
