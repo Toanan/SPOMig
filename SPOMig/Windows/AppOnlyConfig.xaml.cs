@@ -25,14 +25,6 @@ namespace SPOMig.Windows
             InitializeComponent();
         }
 
-        private void SetSetting(string key, string value)
-        {
-            Configuration configuration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            configuration.AppSettings.Settings[key].Value = value;
-            configuration.Save(ConfigurationSaveMode.Full, true);
-            ConfigurationManager.RefreshSection("appSettings");
-        }
-
         /// <summary>
         /// Btn_AppOnlyCfg event : Onclick() Apply AppOnly configuration to the app.config file
         /// </summary>
@@ -40,12 +32,29 @@ namespace SPOMig.Windows
         /// <param name="e"></param>
         private void Btn_AppOnlyCfg_Click(object sender, RoutedEventArgs e)
         {
-            SetSetting("AppID", Tb_AppID.Text);
-            SetSetting("Secret", Tb_AppSecret.Text);
+            AddUpdateAppSettings("AppID", Tb_AppID.Text);
+            AddUpdateAppSettings("Secret", Tb_AppSecret.Text);
             this.Hide();
             BulkWindow bulkWindow = new BulkWindow();
             bulkWindow.Show();
             this.Close();
+        }
+
+
+        static void AddUpdateAppSettings(string key, string value)
+        {
+            try
+            {
+                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var settings = configFile.AppSettings.Settings;
+                settings.Add(key, value);
+                configFile.Save(ConfigurationSaveMode.Modified);
+                ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
+            }
+            catch (ConfigurationErrorsException ex)
+            {
+                MessageBox.Show($"{ex.Message}");
+            }
         }
     }
 }
