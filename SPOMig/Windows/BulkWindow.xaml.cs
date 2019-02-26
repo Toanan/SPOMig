@@ -1,5 +1,4 @@
-﻿
-using System.Windows;
+﻿using System.Windows;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core;
 using System.Configuration;

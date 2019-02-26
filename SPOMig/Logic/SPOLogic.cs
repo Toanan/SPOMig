@@ -138,7 +138,7 @@ namespace SPOMig
             ctx.Load(ctx.Web, a => a.Lists);
             ctx.ExecuteQuery();
 
-            List list = ctx.Web.Lists.GetByTitle("Documents");
+            List list = ctx.Web.Lists.GetByTitle(libName);
             ListItemCollectionPosition position = null;
             // Page Size: 100
             int rowLimit = 100;
