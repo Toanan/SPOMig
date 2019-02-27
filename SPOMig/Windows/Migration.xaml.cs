@@ -20,6 +20,7 @@ namespace SPOMig
         public string LocalPath { get; set; }
         public ClientContext Context { get; set; }
         public string DocLib { get; set; }
+        public bool DeleteOldItems { get; set; }
         #endregion
 
         #region Ctor
@@ -249,6 +250,166 @@ namespace SPOMig
                 }
                 #endregion
 
+                #region Item Deletion
+
+                //We handle the delete old items checkbox feature
+                if (this.DeleteOldItems == true)
+                {
+                    //[LOG:Verbose] Online ListItem retrieve
+                    log.update(CopyLog.Status.Verbose, "Online ListItem retrieve", LocalPath, "");
+                    repport.writeLog(log);
+
+                    // We retrieve all listitems in the library
+                    bw.ReportProgress(0, "Retrieving ListItems");
+                    onlineListItem = ctx.GetAllDocumentsInaLibrary(this.DocLib);
+
+                    //[LOG:OK] Online ListItem retrieve
+                    log.ActionStatus = CopyLog.Status.OK;
+                    repport.writeLog(log);
+
+                    //[LOG:Title] File deletion beggins
+                    log.update("[Starting File Deletion process]");
+                    repport.writeLog(log);
+
+                    #region File Deletion
+
+                    List<ItemURLs> itemsUrls = new List<ItemURLs>();
+
+                    //We retrieve all the formated urls from local source files
+                    foreach (FileInfo file in files)
+                    {
+                        ItemURLs itemUrl = ctx.formatUrl(file, list, LocalPath);
+                        itemsUrls.Add(itemUrl);
+                    }
+
+                    //We reset the progression index
+                    i = 0;
+
+                    foreach (ListItem onlineFile in onlineListItem)
+                    {
+
+                        //Progression display
+                        i++;
+                        double percentage = (double)i / onlineListItem.Count;
+                        int advancement = Convert.ToInt32(percentage * 100);
+                        bw.ReportProgress(advancement, "Checking old files");
+
+                        //Check if Cancellation is pending
+                        if (bw.CancellationPending == true)
+                        {
+                            //[LOG:CANCEL] Cancellation log
+                            log.update("[Process Cancelled]");
+                            repport.writeLog(log);
+
+                            //We cancel the backgroundWorker and return
+                            e.Cancel = true;
+                            return;
+                        }
+                        //If no cancellation, we launch the copy file process
+                        else
+                        {
+                            //We process only files
+                            if (onlineFile.FileSystemObjectType == FileSystemObjectType.File)
+                            {
+                                //[LOG:Verbose] File Deletion
+                                log.update(CopyLog.Status.Verbose, "File deletion", (string)onlineFile["FileLeafRef"], "");
+                                repport.writeLog(log);
+
+                                //Attempt to delete the file if necessary
+                                CopyStatus copystat = ctx.CheckItemToDelete(itemsUrls, list, LocalPath, onlineFile);
+
+                                //[LOG:OK] File Deletion
+                                log.ActionStatus = CopyLog.Status.OK;
+                                log.ItemPath = copystat.Path;
+                                log.Comment = copystat.Comment;
+
+                                //[RESULT/LOG: OK] File Deletion
+                                repport.writeLog(log);
+                                repport.writeResult(copystat);
+                            }
+                        }
+                    }
+
+                    #endregion
+
+                    #region Folder Deletion
+
+                    //Folder deletion
+
+                    List<ItemURLs> folderUrls = new List<ItemURLs>();
+
+                    //We retrieve all the formated urls from local source files
+                    foreach (DirectoryInfo folder in folders)
+                    {
+                        ItemURLs itemUrl = ctx.formatUrl(folder, list, LocalPath);
+                        folderUrls.Add(itemUrl);
+                    }
+
+                    //We reset the progression index
+                    i = 0;
+
+                    foreach (ListItem onlineFolder in onlineListItem)
+                    {
+
+                        //Progression display
+                        i++;
+                        Double percentage = (double)i / onlineListItem.Count;
+                        int advancement = Convert.ToInt32(percentage * 100);
+                        bw.ReportProgress(advancement, "Checking old folders");
+
+                        //Check if Cancellation is pending
+                        if (bw.CancellationPending == true)
+                        {
+                            //[LOG:CANCEL] Cancellation log
+                            log.update("[Process Cancelled]");
+                            repport.writeLog(log);
+
+                            //We cancel the backgroundWorker and return
+                            e.Cancel = true;
+                            return;
+                        }
+                        //If no cancellation, we launch the copy file process
+                        else
+                        {
+                            //We process only folders
+                            if (onlineFolder.FileSystemObjectType == FileSystemObjectType.Folder)
+                            {
+                                //[LOG:Verbose] Folder Deletion
+                                log.update(CopyLog.Status.Verbose, "Folder deletion", (string)onlineFolder["FileLeafRef"], "");
+                                repport.writeLog(log);
+
+                                try
+                                {
+                                    //Attempt to delete the file if necessary
+                                    CopyStatus copystat = ctx.CheckItemToDelete(folderUrls, list, LocalPath, onlineFolder);
+                                    //Change the item type to folder for result purpose
+                                    copystat.Type = CopyStatus.ItemType.Folder;
+
+                                    //[LOG:OK] Folder Deletion
+                                    log.ActionStatus = CopyLog.Status.OK;
+                                    log.ItemPath = copystat.Path;
+                                    log.Comment = copystat.Comment;
+
+                                    //[RESULT/LOG: OK] Folder Deletion
+                                    repport.writeLog(log);
+                                    repport.writeResult(copystat);
+                                }
+                                //We catch allready deleted exception
+                                catch (Exception ex)
+                                {
+                                    if (!ex.Message.Contains("Item does not exist. It may have been deleted by another user."))
+                                    {
+                                        throw ex;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    #endregion
+                }
+
+                #endregion
+
             }
             catch (Exception ex)
             {
@@ -304,6 +465,7 @@ namespace SPOMig
             Btn_Clean.IsEnabled = true;
             Btn_Home.IsEnabled = true;
             Cb_doclib.IsEnabled = true;
+            Chbx_deleteItems.IsEnabled = true;
             Pb_progress.Value = 0;
             Lb_State.Content = "";
 
@@ -333,6 +495,7 @@ namespace SPOMig
         {
             this.LocalPath = @Tb_LocalPath.Text;
             this.DocLib = Cb_doclib.Text;
+            this.DeleteOldItems = (bool)Chbx_deleteItems.IsChecked;
 
             #region UserInput checks
             if (LocalPath == "")
@@ -359,6 +522,7 @@ namespace SPOMig
             Btn_Clean.IsEnabled = false;
             Btn_Home.IsEnabled = false;
             Cb_doclib.IsEnabled = false;
+            Chbx_deleteItems.IsEnabled = false;
             Pb_progress.Value = 0;
             Btn_Cancel.Visibility = Visibility.Visible;
             Pb_progress.Visibility = Visibility.Visible;

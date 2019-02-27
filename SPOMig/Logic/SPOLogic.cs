@@ -504,6 +504,41 @@ namespace SPOMig
             }
         }
 
+        public CopyStatus CheckItemToDelete(List<ItemURLs> file, List list, string localPath, ListItem onlineListItem)
+        {
+
+            //We instanciate the CopyStatus object to return feedback from processing
+            CopyStatus copystat = new CopyStatus()
+            {
+                Name = (string)onlineListItem["FileLeafRef"],
+                Type = CopyStatus.ItemType.File,
+                Path = (string)onlineListItem["FileRef"],
+                Status = CopyStatus.ItemStatus.InProgress
+            };
+
+            foreach (ItemURLs itemUrl in file)
+            {
+                if (itemUrl.ServerRelativeUrl == (string)onlineListItem["FileRef"])
+                {
+                    //File found
+                    copystat.Status = CopyStatus.ItemStatus.Skiped;
+                    copystat.Comment = "Item found in source items - no action required";
+                    return copystat;
+                }
+            }
+            if (copystat.Status == CopyStatus.ItemStatus.InProgress)
+            {
+                //Delete the file
+                ListItem item = list.GetItemById((Int32)onlineListItem["ID"]);
+                item.DeleteObject();
+                Context.ExecuteQuery();
+                copystat.Status = CopyStatus.ItemStatus.Deleted;
+                copystat.Comment = "Item not found in source items - we delete it";
+                return copystat;
+            }
+            return copystat;
+        }
+
         /// <summary>
         /// Retrieve the necessary URLs to process folders related operations
         /// </summary>
@@ -511,7 +546,7 @@ namespace SPOMig
         /// <param name="list">The Targeted SharePoint Online Library</param>
         /// <param name="localPath">Local Path selected by user - Used ton normalize the urls</param>
         /// <returns>ItemURLs - Object containing the Normalized path and the ServerRelativeURL</returns>
-        private ItemURLs formatUrl(DirectoryInfo folder, List list, string localPath)
+        public ItemURLs formatUrl(DirectoryInfo folder, List list, string localPath)
         {
             ItemURLs folderUrls = new ItemURLs();
 
@@ -537,7 +572,7 @@ namespace SPOMig
         /// <param name="list">The Targeted SharePoint Online Library</param>
         /// <param name="localPath">Local Path selected by user - Used ton normalize the urls</param>
         /// <returns>ItemURLs - Object containing the Normalized path and the ServerRelativeURL</returns>
-        private ItemURLs formatUrl(FileInfo file, List list, string localPath)
+        public ItemURLs formatUrl(FileInfo file, List list, string localPath)
         {
             ItemURLs itemUrls = new ItemURLs();
 
