@@ -30,15 +30,17 @@ namespace SPOMig.Windows
         private void Btn_Connect_Click(object sender, RoutedEventArgs e)
         {
 
-            string ID = ConfigurationManager.AppSettings["AppID"];
-            string Sec = ConfigurationManager.AppSettings["Secret"];
+            string ID = FileLogic.getXMLSettings("appID");
+            string Sec = FileLogic.getXMLSettings("appSecret");
             string site = Tb_CsvFile.Text;
 
             using (ClientContext ctx = new AuthenticationManager().GetAppOnlyAuthenticatedContext(site, ID, Sec))
             {
+                /*
                 Web web = ctx.Web;
                 ctx.Load(web);
                 ctx.ExecuteQuery();
+                */
                 this.Context = ctx;
             }
 

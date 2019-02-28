@@ -109,7 +109,6 @@ namespace SPOMig
                         ListCollection lists = Context.getLists();
                         this.Lists = lists;
                     }
-                    
                 }
             }
             catch (Exception ex)

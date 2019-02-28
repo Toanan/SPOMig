@@ -32,29 +32,12 @@ namespace SPOMig.Windows
         /// <param name="e"></param>
         private void Btn_AppOnlyCfg_Click(object sender, RoutedEventArgs e)
         {
-            AddUpdateAppSettings("AppID", Tb_AppID.Text);
-            AddUpdateAppSettings("Secret", Tb_AppSecret.Text);
+            FileLogic.setXMLSettingsAttribute("appID", Tb_AppID.Text);
+            FileLogic.setXMLSettingsAttribute("appSecret", Tb_AppSecret.Text);
             this.Hide();
             BulkWindow bulkWindow = new BulkWindow();
             bulkWindow.Show();
             this.Close();
-        }
-
-
-        static void AddUpdateAppSettings(string key, string value)
-        {
-            try
-            {
-                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var settings = configFile.AppSettings.Settings;
-                settings.Add(key, value);
-                configFile.Save(ConfigurationSaveMode.Modified);
-                ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
-            }
-            catch (ConfigurationErrorsException ex)
-            {
-                MessageBox.Show($"{ex.Message}");
-            }
         }
     }
 }

@@ -2,6 +2,9 @@
 using System.Text;
 using System.IO;
 using System.Security.Cryptography;
+using System;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace SPOMig
 {
@@ -12,6 +15,7 @@ namespace SPOMig
     /// </summary>
     static class FileLogic
     {
+
         #region Methods
 
         /// <summary>
@@ -130,6 +134,79 @@ namespace SPOMig
             }
         }
 
+        /// <summary>
+        /// Ensure or create the xml config file with default settings (located in %appdata%)
+        /// </summary>
+        public static void ensureConfigFileExists()
+        {
+            string xmlPath = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "\\SPOMig\\cfg.xml");
+
+            if (!File.Exists(xmlPath))
+            {
+                using (XmlWriter writer = XmlWriter.Create(xmlPath))
+                {
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("Settings");
+
+                    writer.WriteAttributeString("HashColumn", "FileHash");
+                    writer.WriteAttributeString("appID", "");
+                    writer.WriteAttributeString("appSecret", "");
+                    writer.WriteAttributeString("Threads", "1");
+
+                    writer.WriteEndElement();
+                    writer.WriteEndDocument();
+                }
+            }
+        }
+
+        /// <summary>
+        /// retrieve an xml attribute value from the cfg.xml setting file
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public static string getXMLSettings(string key)
+        {
+            string xmlPath = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "\\SPOMig\\cfg.xml");
+            string value = "";
+
+            using (XmlReader xmlReader = XmlReader.Create(xmlPath))
+            {
+                while (xmlReader.Read())
+                {
+                    if ((xmlReader.NodeType == XmlNodeType.Element) && (xmlReader.Name == "Settings"))
+                    {
+                        if (xmlReader.HasAttributes)
+
+                            value = xmlReader.GetAttribute(key);
+                    }
+                }
+            }
+            return value;
+        }
+
+        /// <summary>
+        /// Set an xml attribute value from the cfg.xml setting file
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        public static void setXMLSettingsAttribute(string key, string value)
+        {
+            string xmlFilePath = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "\\SPOMig\\cfg.xml");
+
+            string newValue = string.Empty;
+            XmlDocument xmlDoc = new XmlDocument();
+
+            xmlDoc.Load(xmlFilePath);
+
+            foreach (XmlNode node in xmlDoc.ChildNodes)
+            {
+                if (node.Name == "Settings")
+                {
+                    node.Attributes[key].Value = value;
+                }
+            }
+            xmlDoc.Save(xmlFilePath);
+        }
         #endregion
     }
 }

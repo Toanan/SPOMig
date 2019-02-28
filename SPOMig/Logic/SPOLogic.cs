@@ -504,6 +504,42 @@ namespace SPOMig
             }
         }
 
+        /// <summary>
+        /// Filter a List<ListItem> to retrieve only Files
+        /// </summary>
+        /// <param name="listitems"></param>
+        /// <returns>List<Listitem> of files only</returns>
+        public List<ListItem> GetOnlyFiles(List<ListItem> listitems)
+        {
+            List<ListItem> fileOnly = new List<ListItem>();
+            foreach (ListItem item in listitems)
+            {
+                if (item.FileSystemObjectType == FileSystemObjectType.File)
+                {
+                    fileOnly.Add(item);
+                }
+            }
+            return fileOnly;
+        }
+
+        /// <summary>
+        /// Filter a List<ListItem> to retrieve only Files
+        /// </summary>
+        /// <param name="listitems"></param>
+        /// <returns>List<Listitem> of files only</returns>
+        public List<ListItem> GetOnlyFolders(List<ListItem> listitems)
+        {
+            List<ListItem> folderOnly = new List<ListItem>();
+            foreach (ListItem item in listitems)
+            {
+                if (item.FileSystemObjectType == FileSystemObjectType.Folder)
+                {
+                    folderOnly.Add(item);
+                }
+            }
+            return folderOnly;
+        }
+
         public CopyStatus CheckItemToDelete(List<ItemURLs> file, List list, string localPath, ListItem onlineListItem)
         {
 

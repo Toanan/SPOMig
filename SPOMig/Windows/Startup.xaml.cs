@@ -23,6 +23,9 @@ namespace SPOMig.Windows
         public Startup()
         {
             InitializeComponent();
+
+            // We check for the cfg xml file to exist
+            FileLogic.ensureConfigFileExists();
         }
 
         private void Btn_GranularScenario_Click(object sender, RoutedEventArgs e)
@@ -37,8 +40,11 @@ namespace SPOMig.Windows
         {
             this.Hide();
 
+            string appID = FileLogic.getXMLSettings("appID");
+            string appSecret = FileLogic.getXMLSettings("appSecret");
+
             //We check if appId and secret are configured
-            if (string.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["AppID"]) || string.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["Secret"]))
+            if (string.IsNullOrWhiteSpace(appID) || string.IsNullOrWhiteSpace(appSecret))
             {
                 this.Hide();
                 AppOnlyConfig appConfig = new AppOnlyConfig();

@@ -96,7 +96,7 @@ namespace SPOMig
             try
             {
                 //We ensure the localpath endwith "/" for further formating actions
-                if (!this.LocalPath.EndsWith("/") ||!this.LocalPath.EndsWith("\\")) this.LocalPath = this.LocalPath + "\\";
+                if (!this.LocalPath.EndsWith("/") || !this.LocalPath.EndsWith("\\")) this.LocalPath = this.LocalPath + "\\";
 
                 //[LOG:OK] Local Path formating : Log success
                 log.ActionStatus = CopyLog.Status.OK;
@@ -156,7 +156,7 @@ namespace SPOMig
                     i++;
                     double percentage = (double)i / folders.Count;
                     int advancement = Convert.ToInt32(percentage * 100);
-                    bw.ReportProgress(advancement, $"Checking folders {advancement}%\n{i}/{folders.Count}");
+                    bw.ReportProgress(advancement, $"Checking folders\n{advancement}%\n{i}/{folders.Count}");
 
                     //We check for pending cancellation
                     if (bw.CancellationPending == true)
@@ -215,7 +215,7 @@ namespace SPOMig
                     i++;
                     double percentage = (double)i / files.Count;
                     int advancement = Convert.ToInt32(percentage * 100);
-                    bw.ReportProgress(advancement, $"Checking files {advancement}%\n{i}/{files.Count}");
+                    bw.ReportProgress(advancement, $"Checking files\n{advancement}%\n{i}/{files.Count}");
 
                     //Check if Cancellation is pending
                     if (bw.CancellationPending == true)
@@ -259,9 +259,11 @@ namespace SPOMig
                     log.update(CopyLog.Status.Verbose, "Online ListItem retrieve", LocalPath, "");
                     repport.writeLog(log);
 
-                    // We retrieve all listitems in the library
+                    // We retrieve all listitems in the library and divide files and folders
                     bw.ReportProgress(0, "Retrieving ListItems");
                     onlineListItem = ctx.GetAllDocumentsInaLibrary(this.DocLib);
+                    List<ListItem> onlineFiles = ctx.GetOnlyFiles(onlineListItem);
+                    List<ListItem> onlineFolders = ctx.GetOnlyFolders(onlineListItem);
 
                     //[LOG:OK] Online ListItem retrieve
                     log.ActionStatus = CopyLog.Status.OK;
@@ -273,9 +275,8 @@ namespace SPOMig
 
                     #region File Deletion
 
-                    List<ItemURLs> itemsUrls = new List<ItemURLs>();
-
                     //We retrieve all the formated urls from local source files
+                    List<ItemURLs> itemsUrls = new List<ItemURLs>();
                     foreach (FileInfo file in files)
                     {
                         ItemURLs itemUrl = ctx.formatUrl(file, list, LocalPath);
@@ -285,14 +286,14 @@ namespace SPOMig
                     //We reset the progression index
                     i = 0;
 
-                    foreach (ListItem onlineFile in onlineListItem)
+                    foreach (ListItem onlineFile in onlineFiles)
                     {
 
                         //Progression display
                         i++;
-                        double percentage = (double)i / onlineListItem.Count;
+                        double percentage = (double)i / onlineFiles.Count;
                         int advancement = Convert.ToInt32(percentage * 100);
-                        bw.ReportProgress(advancement, "Checking old files");
+                        bw.ReportProgress(advancement, $"Checking old files\n{advancement}%\n{i}/{onlineFiles.Count}");
 
                         //Check if Cancellation is pending
                         if (bw.CancellationPending == true)
@@ -305,28 +306,26 @@ namespace SPOMig
                             e.Cancel = true;
                             return;
                         }
-                        //If no cancellation, we launch the copy file process
+                        //If no cancellation, we launch the file deletion process
                         else
                         {
-                            //We process only files
-                            if (onlineFile.FileSystemObjectType == FileSystemObjectType.File)
-                            {
-                                //[LOG:Verbose] File Deletion
-                                log.update(CopyLog.Status.Verbose, "File deletion", (string)onlineFile["FileLeafRef"], "");
-                                repport.writeLog(log);
 
-                                //Attempt to delete the file if necessary
-                                CopyStatus copystat = ctx.CheckItemToDelete(itemsUrls, list, LocalPath, onlineFile);
+                            //[LOG:Verbose] File Deletion
+                            log.update(CopyLog.Status.Verbose, "File deletion", (string)onlineFile["FileLeafRef"], "");
+                            repport.writeLog(log);
 
-                                //[LOG:OK] File Deletion
-                                log.ActionStatus = CopyLog.Status.OK;
-                                log.ItemPath = copystat.Path;
-                                log.Comment = copystat.Comment;
+                            //Attempt to delete the file if necessary
+                            CopyStatus copystat = ctx.CheckItemToDelete(itemsUrls, list, LocalPath, onlineFile);
 
-                                //[RESULT/LOG: OK] File Deletion
-                                repport.writeLog(log);
-                                repport.writeResult(copystat);
-                            }
+                            //[LOG:OK] File Deletion
+                            log.ActionStatus = CopyLog.Status.OK;
+                            log.ItemPath = copystat.Path;
+                            log.Comment = copystat.Comment;
+
+                            //[RESULT/LOG: OK] File Deletion
+                            repport.writeLog(log);
+                            repport.writeResult(copystat);
+
                         }
                     }
 
@@ -336,9 +335,8 @@ namespace SPOMig
 
                     //Folder deletion
 
+                    //We retrieve all the formated urls from local source folders
                     List<ItemURLs> folderUrls = new List<ItemURLs>();
-
-                    //We retrieve all the formated urls from local source files
                     foreach (DirectoryInfo folder in folders)
                     {
                         ItemURLs itemUrl = ctx.formatUrl(folder, list, LocalPath);
@@ -348,14 +346,14 @@ namespace SPOMig
                     //We reset the progression index
                     i = 0;
 
-                    foreach (ListItem onlineFolder in onlineListItem)
+                    foreach (ListItem onlineFolder in onlineFolders)
                     {
 
                         //Progression display
                         i++;
-                        Double percentage = (double)i / onlineListItem.Count;
+                        Double percentage = (double)i / onlineFolders.Count;
                         int advancement = Convert.ToInt32(percentage * 100);
-                        bw.ReportProgress(advancement, "Checking old folders");
+                        bw.ReportProgress(advancement, $"Checking old folders\n{advancement}%\n{i}/{onlineFolders.Count}");
 
                         //Check if Cancellation is pending
                         if (bw.CancellationPending == true)
@@ -368,39 +366,36 @@ namespace SPOMig
                             e.Cancel = true;
                             return;
                         }
-                        //If no cancellation, we launch the copy file process
+                        //If no cancellation, we launch the folder deletion process
                         else
                         {
-                            //We process only folders
-                            if (onlineFolder.FileSystemObjectType == FileSystemObjectType.Folder)
+
+                            //[LOG:Verbose] Folder Deletion
+                            log.update(CopyLog.Status.Verbose, "Folder deletion", (string)onlineFolder["FileLeafRef"], "");
+                            repport.writeLog(log);
+
+                            try
                             {
-                                //[LOG:Verbose] Folder Deletion
-                                log.update(CopyLog.Status.Verbose, "Folder deletion", (string)onlineFolder["FileLeafRef"], "");
+                                //Attempt to delete the file if necessary
+                                CopyStatus copystat = ctx.CheckItemToDelete(folderUrls, list, LocalPath, onlineFolder);
+                                //Change the item type to folder for result purpose
+                                copystat.Type = CopyStatus.ItemType.Folder;
+
+                                //[LOG:OK] Folder Deletion
+                                log.ActionStatus = CopyLog.Status.OK;
+                                log.ItemPath = copystat.Path;
+                                log.Comment = copystat.Comment;
+
+                                //[RESULT/LOG: OK] Folder Deletion
                                 repport.writeLog(log);
-
-                                try
+                                repport.writeResult(copystat);
+                            }
+                            //We catch allready deleted exception
+                            catch (Exception ex)
+                            {
+                                if (!ex.Message.Contains("Item does not exist. It may have been deleted by another user."))
                                 {
-                                    //Attempt to delete the file if necessary
-                                    CopyStatus copystat = ctx.CheckItemToDelete(folderUrls, list, LocalPath, onlineFolder);
-                                    //Change the item type to folder for result purpose
-                                    copystat.Type = CopyStatus.ItemType.Folder;
-
-                                    //[LOG:OK] Folder Deletion
-                                    log.ActionStatus = CopyLog.Status.OK;
-                                    log.ItemPath = copystat.Path;
-                                    log.Comment = copystat.Comment;
-
-                                    //[RESULT/LOG: OK] Folder Deletion
-                                    repport.writeLog(log);
-                                    repport.writeResult(copystat);
-                                }
-                                //We catch allready deleted exception
-                                catch (Exception ex)
-                                {
-                                    if (!ex.Message.Contains("Item does not exist. It may have been deleted by another user."))
-                                    {
-                                        throw ex;
-                                    }
+                                    throw ex;
                                 }
                             }
                         }
