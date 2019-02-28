@@ -44,6 +44,7 @@ namespace SPOMig.Windows
         {
             AddUpdateAppSettings("AppID", Tb_AppID.Text);
             AddUpdateAppSettings("Secret", Tb_AppSecret.Text);
+            AddUpdateAppSettings("Buffer","3");
             this.Hide();
             BulkWindow bulkWindow = new BulkWindow(cfg);
             bulkWindow.Show();

@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core;
 using System.Configuration;
+using System;
 
 namespace SPOMig.Windows
 {
@@ -13,14 +14,15 @@ namespace SPOMig.Windows
     public partial class BulkWindow : Window
     {
         #region Props
+
         public string AppID { get; set; }
         public string AppSecret { get; set; }
         public Configuration Config { get; set; }
+        public ClientContext Context { get; set; }
+
         #endregion
 
         #region Ctor
-
-        public ClientContext Context { get; set; }
 
         public BulkWindow(Configuration cfg)
         {
@@ -36,6 +38,8 @@ namespace SPOMig.Windows
 
             string ID = Config.AppSettings.Settings["AppID"].Value;
             string Sec = Config.AppSettings.Settings["Secret"].Value;
+            int buff;
+            Int32.TryParse(Config.AppSettings.Settings["Buffer"].Value, out buff);
             string site = Tb_CsvFile.Text;
 
             using (ClientContext ctx = new AuthenticationManager().GetAppOnlyAuthenticatedContext(site, ID, Sec))
@@ -52,6 +56,11 @@ namespace SPOMig.Windows
             MessageBox.Show(items.Count.ToString());
         }
 
+        /// <summary>
+        /// Btn_Home OnClick event, open the startup window
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BtnHome_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();
@@ -60,6 +69,11 @@ namespace SPOMig.Windows
             this.Close();
         }
 
+        /// <summary>
+        /// Btn_Config Onclick event, open the AppOnly configuration window
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Btn_Config_Click(object sender, RoutedEventArgs e)
         {
             this.Hide();
