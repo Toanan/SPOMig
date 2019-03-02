@@ -18,6 +18,20 @@ namespace SPOMig
 
         #region Methods
 
+        public static int isRootFolder(string path)
+        {
+            int count = 0;
+            foreach (char c in path)
+            {
+                if (c == '/')
+                {
+                     count += 1;
+                }
+
+            }
+            return count;
+        }
+
         /// <summary>
         /// Retrieve all file information recursively from a local path
         /// </summary>

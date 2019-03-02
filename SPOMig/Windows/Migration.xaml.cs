@@ -197,6 +197,47 @@ namespace SPOMig
                         }
                     }
                 }
+
+                var rootFolder = list.RootFolder;
+                Context.Load(rootFolder);
+                Context.ExecuteQuery();
+
+                int count = 0;
+                foreach (FoldersToProcess folder in ctx.FoldersToUpload)
+                {
+                    count++;
+                    var myFolder = rootFolder.Folders.Add(folder.ItemUrls.ServerRelativeUrl);                   
+                }
+                if (count == 500)
+                {
+                    Context.RequestTimeout = -1;
+                    Context.ExecuteQuery();
+                    count = 0;
+                }
+                bw.ReportProgress(0, "Uploading folders");
+                Context.RequestTimeout = -1;
+                Context.ExecuteQuery();
+
+                count = 0;
+
+                foreach (FoldersToProcess folder in ctx.FoldersToUpload)
+                {
+                    //We update metadate
+                    ListItem listitemFolder = Context.Web.GetListItem(folder.ItemUrls.ServerRelativeUrl);
+                    listitemFolder["Created"] = folder.Created;
+                    listitemFolder["Modified"] = folder.Modified;
+                    listitemFolder.Update();
+                    count++;
+                }
+                if (count == 500)
+                {
+                    Context.RequestTimeout = -1;
+                    Context.ExecuteQuery();
+                    count = 0;
+                }
+                bw.ReportProgress(0, "Uploading folders\nMetadata");
+                Context.RequestTimeout = -1;
+                Context.ExecuteQuery();
                 #endregion
 
 
@@ -285,7 +326,7 @@ namespace SPOMig
 
                     //We reset the progression index
                     i = 0;
-
+                    count = 0;
                     foreach (ListItem onlineFile in onlineFiles)
                     {
 
@@ -317,6 +358,19 @@ namespace SPOMig
                             //Attempt to delete the file if necessary
                             CopyStatus copystat = ctx.CheckItemToDelete(itemsUrls, list, LocalPath, onlineFile);
 
+                            
+                            if (copystat.Status == CopyStatus.ItemStatus.Deleted)
+                            {
+                                count ++;
+                                ListItem item = list.GetItemById((Int32)onlineFile["ID"]);
+                                item.DeleteObject();
+                            }
+                            if (count == 500)
+                            {
+                                count = 0;
+                                Context.ExecuteQuery();
+                            }
+
                             //[LOG:OK] File Deletion
                             log.ActionStatus = CopyLog.Status.OK;
                             log.ItemPath = copystat.Path;
@@ -327,7 +381,11 @@ namespace SPOMig
                             repport.writeResult(copystat);
 
                         }
+                        
                     }
+                    bw.ReportProgress(0, "Deleting old files");
+                    Context.RequestTimeout = -1;
+                    Context.ExecuteQuery();
 
                     #endregion
 
@@ -374,30 +432,42 @@ namespace SPOMig
                             log.update(CopyLog.Status.Verbose, "Folder deletion", (string)onlineFolder["FileLeafRef"], "");
                             repport.writeLog(log);
 
-                            try
-                            {
-                                //Attempt to delete the file if necessary
-                                CopyStatus copystat = ctx.CheckItemToDelete(folderUrls, list, LocalPath, onlineFolder);
-                                //Change the item type to folder for result purpose
-                                copystat.Type = CopyStatus.ItemType.Folder;
+                            //Attempt to delete the file if necessary
+                            CopyStatus copystat = ctx.CheckItemToDelete(folderUrls, list, LocalPath, onlineFolder);
+                            //Change the item type to folder for result purpose
+                            copystat.Type = CopyStatus.ItemType.Folder;
 
-                                //[LOG:OK] Folder Deletion
-                                log.ActionStatus = CopyLog.Status.OK;
-                                log.ItemPath = copystat.Path;
-                                log.Comment = copystat.Comment;
+                            int pathRootFolderCount = FileLogic.isRootFolder(list.RootFolder.ServerRelativeUrl);
+                            int pathFolderCount = FileLogic.isRootFolder(copystat.Path);
 
-                                //[RESULT/LOG: OK] Folder Deletion
-                                repport.writeLog(log);
-                                repport.writeResult(copystat);
-                            }
-                            //We catch allready deleted exception
-                            catch (Exception ex)
+                            if ((pathFolderCount - pathRootFolderCount) == 1 && copystat.Status == CopyStatus.ItemStatus.Deleted)
                             {
-                                if (!ex.Message.Contains("Item does not exist. It may have been deleted by another user."))
-                                {
-                                    throw ex;
-                                }
+                                ListItem item = list.GetItemById((Int32)onlineFolder["ID"]);
+                                item.DeleteObject();
                             }
+
+                            //[LOG:OK] Folder Deletion
+                            log.ActionStatus = CopyLog.Status.OK;
+                            log.ItemPath = copystat.Path;
+                            log.Comment = copystat.Comment;
+
+                            //[RESULT/LOG: OK] Folder Deletion
+                            repport.writeLog(log);
+                            repport.writeResult(copystat);
+                           
+                        }
+                    }
+                    bw.ReportProgress(0, "Deleting old folders");
+                    Context.RequestTimeout = -1;
+                    try
+                    {
+                        Context.ExecuteQuery();
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!ex.Message.Contains("Item does not exist. It may have been deleted by another user."))
+                        {
+                            throw ex;
                         }
                     }
                     #endregion

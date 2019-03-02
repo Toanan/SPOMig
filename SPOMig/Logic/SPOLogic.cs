@@ -15,6 +15,7 @@ namespace SPOMig
         #region Props
         public ClientContext Context { get; set; }
         public string hashColumn { get; set; }
+        public List<FoldersToProcess> FoldersToUpload = new List<FoldersToProcess>();
         #endregion
 
         #region Ctor
@@ -214,9 +215,15 @@ namespace SPOMig
 
     */
 
-                
+                FoldersToProcess folderToProcess = new FoldersToProcess
+                {
+                    ItemUrls = folderUrls,
+                    Created = folder.CreationTimeUtc,
+                    Modified = folder.CreationTimeUtc
+                };
+                this.FoldersToUpload.Add(folderToProcess);
 
-                
+                /* 
                 var rootFolder = list.RootFolder;
                 Context.Load(rootFolder);
                 Context.ExecuteQuery();
@@ -229,6 +236,7 @@ namespace SPOMig
                 listitemFolder["Modified"] = folder.CreationTimeUtc;
                 listitemFolder.Update();
                 Context.ExecuteQuery();
+                */
 
                 //We update the CopyStatus accordingly
                 copyStat.Status = CopyStatus.ItemStatus.Created;
@@ -565,9 +573,11 @@ namespace SPOMig
             if (copystat.Status == CopyStatus.ItemStatus.InProgress)
             {
                 //Delete the file
+                /*
                 ListItem item = list.GetItemById((Int32)onlineListItem["ID"]);
                 item.DeleteObject();
                 Context.ExecuteQuery();
+                */
                 copystat.Status = CopyStatus.ItemStatus.Deleted;
                 copystat.Comment = "Item not found in source items - we delete it";
                 return copystat;
