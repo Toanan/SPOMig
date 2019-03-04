@@ -36,7 +36,13 @@ namespace SPOMig
         #endregion
 
         #region Methods
-        //Update the log content and post it to the file
+        /// <summary>
+        /// Update and write log
+        /// </summary>
+        /// <param name="result">Result of the processing</param>
+        /// <param name="action">Action to process</param>
+        /// <param name="itemPath">Path of the item to process</param>
+        /// <param name="comment">Comment for the processing</param>
         public void update(Status result, string action, string itemPath, string comment)
         {
             this.ActionStatus = result;
@@ -45,6 +51,11 @@ namespace SPOMig
             this.Comment = comment;
         }
 
+        /// <summary>
+        /// Update and write log
+        /// Overload to show only section Title
+        /// </summary>
+        /// <param name="comment">Name of the section</param>
         public void update(string comment)
         {
             this.ActionStatus = CopyLog.Status.Empty;

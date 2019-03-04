@@ -9,7 +9,7 @@ using System.Xml.Linq;
 namespace SPOMig
 {
     /// <summary>
-    /// This class is used to interact with the local FileSystem
+    /// This class is used to interact with the local FileSystem using static methods
     /// It provides methods to retrive a list of DirectoryInfo and FileInfo from a path
     /// It also provide a method to compute file hash
     /// </summary>
@@ -18,6 +18,11 @@ namespace SPOMig
 
         #region Methods
 
+        /// <summary>
+        /// Method to retrieve the root folder path number of child
+        /// </summary>
+        /// <param name="path">The path to process</param>
+        /// <returns></returns>
         public static int isRootFolder(string path)
         {
             int count = 0;
@@ -33,7 +38,7 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// Retrieve all file information recursively from a local path
+        /// Retrieve all file information from a local path
         /// </summary>
         /// <returns>List<FileInfo></returns>
         public static List<FileInfo> getFiles(string localPath)
@@ -166,6 +171,7 @@ namespace SPOMig
                     writer.WriteAttributeString("appID", "");
                     writer.WriteAttributeString("appSecret", "");
                     writer.WriteAttributeString("Threads", "1");
+                    writer.WriteAttributeString("BatchRequestSize", "500");
 
                     writer.WriteEndElement();
                     writer.WriteEndDocument();
@@ -174,9 +180,9 @@ namespace SPOMig
         }
 
         /// <summary>
-        /// retrieve an xml attribute value from the cfg.xml setting file
+        /// Retrieve an xml attribute value from the cfg.xml setting file
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="key">Key of the attribute</param>
         /// <returns></returns>
         public static string getXMLSettings(string key)
         {

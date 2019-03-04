@@ -21,6 +21,7 @@ namespace SPOMig
         public ClientContext Context { get; set; }
         public string DocLib { get; set; }
         public bool DeleteOldItems { get; set; }
+        public int BatchRequestSize { get; set; }
         #endregion
 
         #region Ctor
@@ -28,7 +29,8 @@ namespace SPOMig
         {
             InitializeComponent();
             this.Context = ctx;
-            
+
+            this.BatchRequestSize = Convert.ToInt32(FileLogic.getXMLSettings("BatchRequestSize"));
 
             //We retrieve only document library from the ListCollection passed and populate the combobox
             foreach (List list in ListCollection)
@@ -56,6 +58,8 @@ namespace SPOMig
         {
             InitializeComponent();
             this.Context = ctx;
+
+            this.BatchRequestSize = Convert.ToInt32(FileLogic.getXMLSettings("BatchRequestSize"));
 
             Cb_doclib.Items.Add(odList.Title);
             Cb_doclib.SelectedIndex = 0;
@@ -147,8 +151,13 @@ namespace SPOMig
                 log.update("[Starting Folder Creation process]");
                 repport.writeLog(log);
 
+                var rootFolder = list.RootFolder;
+                Context.Load(rootFolder);
+                Context.ExecuteQuery();
+
                 //We set the index to display progression
                 int i = 0;
+                int count = 0;
 
                 foreach (DirectoryInfo folder in folders)
                 {
@@ -156,7 +165,7 @@ namespace SPOMig
                     i++;
                     double percentage = (double)i / folders.Count;
                     int advancement = Convert.ToInt32(percentage * 100);
-                    bw.ReportProgress(advancement, $"Checking folders\n{advancement}%\n{i}/{folders.Count}");
+                    bw.ReportProgress(advancement, $"Checking folders - {advancement}%\n{i}/{folders.Count}");
 
                     //We check for pending cancellation
                     if (bw.CancellationPending == true)
@@ -178,6 +187,7 @@ namespace SPOMig
 
                         //We process the folder
                         CopyStatus copyStatus = ctx.copyFolderToSPO(folder, list, LocalPath, onlineListItem);
+                                              
 
                         //[LOG:OK] Folder Creation
                         log.ActionStatus = CopyLog.Status.OK;
@@ -198,44 +208,60 @@ namespace SPOMig
                     }
                 }
 
-                var rootFolder = list.RootFolder;
-                Context.Load(rootFolder);
-                Context.ExecuteQuery();
 
-                int count = 0;
+                i = 0;
+                count = 0;
                 foreach (FoldersToProcess folder in ctx.FoldersToUpload)
                 {
+
+                    //Progression display
+                    i++;
+                    double percentage = (double)i / folders.Count;
+                    int advancement = Convert.ToInt32(percentage * 100);
+                    bw.ReportProgress(advancement, $"Batching folders upload - {advancement}%\n{i}/{folders.Count}");
+
                     count++;
-                    var myFolder = rootFolder.Folders.Add(folder.ItemUrls.ServerRelativeUrl);                   
+                    var myFolder = rootFolder.Folders.Add(folder.ItemUrls.ServerRelativeUrl);
+                    if (count >= this.BatchRequestSize)
+                    {
+                        bw.ReportProgress(advancement, "Uploading folders batch");
+                        Context.RequestTimeout = -1;
+                        Context.ExecuteQuery();
+                        count = 0;
+                    }
                 }
-                if (count == 500)
-                {
-                    Context.RequestTimeout = -1;
-                    Context.ExecuteQuery();
-                    count = 0;
-                }
-                bw.ReportProgress(0, "Uploading folders");
+                bw.ReportProgress(0, "Finalising folders upload");
                 Context.RequestTimeout = -1;
                 Context.ExecuteQuery();
 
+                i = 0;
                 count = 0;
 
                 foreach (FoldersToProcess folder in ctx.FoldersToUpload)
                 {
+
+                    //Progression display
+                    i++;
+                    double percentage = (double)i / folders.Count;
+                    int advancement = Convert.ToInt32(percentage * 100);
+                    bw.ReportProgress(advancement, $"Batching folders metadata - {advancement}%\n{i}/{folders.Count}");
+
                     //We update metadate
                     ListItem listitemFolder = Context.Web.GetListItem(folder.ItemUrls.ServerRelativeUrl);
                     listitemFolder["Created"] = folder.Created;
                     listitemFolder["Modified"] = folder.Modified;
                     listitemFolder.Update();
                     count++;
+                    if (count >= this.BatchRequestSize)
+                    {
+                        bw.ReportProgress(advancement, "Uploading folders metadata batch");
+                        Context.RequestTimeout = -1;
+                        Context.ExecuteQuery();
+                        count = 0;
+                    }
                 }
-                if (count == 500)
-                {
-                    Context.RequestTimeout = -1;
-                    Context.ExecuteQuery();
-                    count = 0;
-                }
-                bw.ReportProgress(0, "Uploading folders\nMetadata");
+                
+                bw.ReportProgress(0, "Finalising folders Metadata");
                 Context.RequestTimeout = -1;
                 Context.ExecuteQuery();
                 #endregion
@@ -256,7 +282,7 @@ namespace SPOMig
                     i++;
                     double percentage = (double)i / files.Count;
                     int advancement = Convert.ToInt32(percentage * 100);
-                    bw.ReportProgress(advancement, $"Checking files\n{advancement}%\n{i}/{files.Count}");
+                    bw.ReportProgress(advancement, $"Checking files - {advancement}%\n{i}/{files.Count}");
 
                     //Check if Cancellation is pending
                     if (bw.CancellationPending == true)
@@ -334,7 +360,7 @@ namespace SPOMig
                         i++;
                         double percentage = (double)i / onlineFiles.Count;
                         int advancement = Convert.ToInt32(percentage * 100);
-                        bw.ReportProgress(advancement, $"Checking old files\n{advancement}%\n{i}/{onlineFiles.Count}");
+                        bw.ReportProgress(advancement, $"Checking old files - {advancement}%\n{i}/{onlineFiles.Count}");
 
                         //Check if Cancellation is pending
                         if (bw.CancellationPending == true)
@@ -365,7 +391,7 @@ namespace SPOMig
                                 ListItem item = list.GetItemById((Int32)onlineFile["ID"]);
                                 item.DeleteObject();
                             }
-                            if (count == 500)
+                            if (count >= this.BatchRequestSize)
                             {
                                 count = 0;
                                 Context.ExecuteQuery();
@@ -403,7 +429,7 @@ namespace SPOMig
 
                     //We reset the progression index
                     i = 0;
-
+                    count = 0;
                     foreach (ListItem onlineFolder in onlineFolders)
                     {
 
@@ -411,7 +437,7 @@ namespace SPOMig
                         i++;
                         Double percentage = (double)i / onlineFolders.Count;
                         int advancement = Convert.ToInt32(percentage * 100);
-                        bw.ReportProgress(advancement, $"Checking old folders\n{advancement}%\n{i}/{onlineFolders.Count}");
+                        bw.ReportProgress(advancement, $"Checking old folders - {advancement}%\n{i}/{onlineFolders.Count}");
 
                         //Check if Cancellation is pending
                         if (bw.CancellationPending == true)
@@ -442,8 +468,24 @@ namespace SPOMig
 
                             if ((pathFolderCount - pathRootFolderCount) == 1 && copystat.Status == CopyStatus.ItemStatus.Deleted)
                             {
+                                count++;
                                 ListItem item = list.GetItemById((Int32)onlineFolder["ID"]);
                                 item.DeleteObject();
+                            }
+                            if (count >= this.BatchRequestSize)
+                            {
+                                Context.RequestTimeout = -1;
+                                try
+                                {
+                                    Context.ExecuteQuery();
+                                }
+                                catch (Exception ex)
+                                {
+                                    if (!ex.Message.Contains("Item does not exist. It may have been deleted by another user."))
+                                    {
+                                        throw ex;
+                                    }
+                                }
                             }
 
                             //[LOG:OK] Folder Deletion

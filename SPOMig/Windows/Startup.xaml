@@ -7,10 +7,16 @@
         mc:Ignorable="d"
         Title="Startup" Height="450" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
-        <Label Name="Lb_Top" Content="Welcome! How would you like to authenticate ?" Margin="229,43,223.6,336" />
-        <Label Name="Lb_Granular" Content="Using a user login" Margin="104,174,546.6,208"></Label>
-        <Button Name="Btn_GranularScenario" Content="User Login" Margin="104,249,568.6,100" Click="Btn_GranularScenario_Click"></Button>
-        <Label Name="Lb_BulkScenario" Content="Using an App Only Login" Margin="517,174,109.6,209"></Label>
-        <Button Name="Btn_BulkScenario" Content="App Only Login" Margin="517,249,155.6,100" Click="Btn_BulkScenario_Click"></Button>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="657*"/>
+            <ColumnDefinition Width="136*"/>
+        </Grid.ColumnDefinitions>
+        <Label Name="Lb_Top" Content="Welcome! How would you like to authenticate ?" Margin="495,77,36.6,302" HorizontalAlignment="center" Grid.ColumnSpan="2"/>
+        <Label Name="Lb_Granular" Content="Using a user login" Margin="491,176,62.224,206" HorizontalAlignment="Center"/>
+        <Button Name="Btn_GranularScenario" Content="User Login" Margin="636,154,36.6,195" Click="Btn_GranularScenario_Click" Grid.ColumnSpan="2"></Button>
+        <Label Name="Lb_BulkScenario" Content="Using an App Only Login" Margin="453,289,62.224,94" HorizontalAlignment="Center" />
+        <Button Name="Btn_BulkScenario" Content="App Only Login" Margin="636,267,36.6,82" Click="Btn_BulkScenario_Click" Grid.ColumnSpan="2"></Button>
+        <Image HorizontalAlignment="Left" Height="169" Margin="59,129,0,0" VerticalAlignment="Top" Width="250" Source="C:\Users\Antoine Galland\source\repos\SPOMig\SPOMig\Ressources\troplolol.png"/>
+
     </Grid>
 </Window>

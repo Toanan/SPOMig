@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace SPOMig
 {
     /// <summary>
-    /// This Class is usedto store feedback when processing file comparison in the file copy process
+    /// This Class is used to store feedback when processing file comparison in the file copy process
     /// </summary>
     class OnlineFileStatus
     {

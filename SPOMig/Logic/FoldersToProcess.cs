@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace SPOMig
 {
+    /// <summary>
+    /// This class is designed to store items to process
+    /// </summary>
     class FoldersToProcess
     {
         public ItemURLs ItemUrls { get; set; }

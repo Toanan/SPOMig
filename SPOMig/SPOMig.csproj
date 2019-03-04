@@ -310,5 +310,8 @@
   <ItemGroup>
     <Resource Include="Ressources\kisspng-sharepoint-computer-icons-microsoft-office-365-outlook-5ac078e7923895.5907463815225633035989.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Ressources\troplolol.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

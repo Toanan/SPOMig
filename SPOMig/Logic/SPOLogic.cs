@@ -22,7 +22,8 @@ namespace SPOMig
         public SPOLogic(ClientContext ctx)
         {
             this.Context = ctx;
-            this.hashColumn = ConfigurationManager.AppSettings["HashColumn"];
+            FileLogic.ensureConfigFileExists();
+            this.hashColumn = FileLogic.getXMLSettings("HashColumn");
         }
         #endregion
 
@@ -548,6 +549,14 @@ namespace SPOMig
             return folderOnly;
         }
 
+        /// <summary>
+        /// Check if an item has to be deleted or not
+        /// </summary>
+        /// <param name="file">ItemUrls of the items from the local source path</param>
+        /// <param name="list">SharePoint / Onedrive list object</param>
+        /// <param name="localPath">The local source path selected by user</param>
+        /// <param name="onlineListItem">The online ListItem to check</param>
+        /// <returns></returns>
         public CopyStatus CheckItemToDelete(List<ItemURLs> file, List list, string localPath, ListItem onlineListItem)
         {
 
