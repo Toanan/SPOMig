@@ -5,18 +5,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SPOMig.Windows"
         mc:Ignorable="d"
-        Title="Startup" Height="450" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="" Height="450" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="657*"/>
             <ColumnDefinition Width="136*"/>
         </Grid.ColumnDefinitions>
-        <Label Name="Lb_Top" Content="Welcome! How would you like to authenticate ?" Margin="495,77,36.6,302" HorizontalAlignment="center" Grid.ColumnSpan="2"/>
-        <Label Name="Lb_Granular" Content="Using a user login" Margin="491,176,62.224,206" HorizontalAlignment="Center"/>
-        <Button Name="Btn_GranularScenario" Content="User Login" Margin="636,154,36.6,195" Click="Btn_GranularScenario_Click" Grid.ColumnSpan="2"></Button>
-        <Label Name="Lb_BulkScenario" Content="Using an App Only Login" Margin="453,289,62.224,94" HorizontalAlignment="Center" />
-        <Button Name="Btn_BulkScenario" Content="App Only Login" Margin="636,267,36.6,82" Click="Btn_BulkScenario_Click" Grid.ColumnSpan="2"></Button>
-        <Image HorizontalAlignment="Left" Height="169" Margin="59,129,0,0" VerticalAlignment="Top" Width="250" Source="C:\Users\Antoine Galland\source\repos\SPOMig\SPOMig\Ressources\troplolol.png"/>
+        <Label Name="Lb_Top" Content="Welcome! How would you like to authenticate ?" Margin="461,55,70.6,324" HorizontalAlignment="center" Grid.ColumnSpan="2"/>
+        <Button Name="Btn_GranularScenario" Content="User Login" Margin="450,124,86.6,225" Click="Btn_GranularScenario_Click"/>
+        <Button Name="Btn_BulkScenario" Content="App Only Login" Margin="614,124,58.6,225" Click="Btn_BulkScenario_Click" Grid.ColumnSpan="2"></Button>
+        <Label Name="Lb_mid" Content="Want to map metadata to your source items?" Margin="251,273,134.6,106" HorizontalAlignment="center" Width="272"/>
+        <Label Name="Lb_LocalPath" Content="Path" HorizontalAlignment="center" Margin="40,333,582.6,42" Width="35"/>
+        <TextBox Name="Tb_LocalPath" HorizontalAlignment="Left" Height="23" Margin="92,337,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="525"/>
+        <Button Name="Btn_Extract" Content="Extract to csv" Margin="636,311,36.6,38" Click="Btn_Extract_Click" Grid.ColumnSpan="2"></Button>
+        <Image HorizontalAlignment="Left" Height="170" Margin="91,48,0,0" VerticalAlignment="Top" Width="250" Source="C:\Users\Antoine Galland\source\repos\SPOMig\SPOMig\Ressources\troplolol.png"/>
 
     </Grid>
 </Window>

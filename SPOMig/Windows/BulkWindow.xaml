@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SPOMig.Windows"
         mc:Ignorable="d"
-        Title="BulkWindow" Height="450" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="" Height="450" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
         <Label Name="Lb_CsvFile" Content="CSV File Path" Margin="55,53,643.8,329"></Label>
         <TextBox Name="Tb_CsvFile" Margin="173,52,68.8,329"></TextBox>

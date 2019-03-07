@@ -15,13 +15,19 @@ namespace SPOMig
         #region Props
         public string LogFilePath { get; set; }
         public string ResultFilePath { get; set; }
-        private enum reportFileType { Result, Log }
+        public string ExtractFilePath { get; set; }
+        private enum reportFileType { Result, Log, Extract }
         #endregion
 
         #region Ctor
         public Reporting(string libName, string siteUrl)
         {
             createFiles(libName, siteUrl);
+        }
+
+        public Reporting(string sourcePath)
+        {
+            createExtractFile(sourcePath);
         }
         #endregion
 
@@ -51,6 +57,36 @@ namespace SPOMig
             var logStartMessage = $"[Process beggin]Destination Site : {siteUrl} | Destination Library : {libName}";
             CopyLog log = new CopyLog(logStartMessage);
             writeLog(log);
+        }
+
+        /// <summary>
+        /// Create the extract to csv file and set the header
+        /// </summary>
+        /// <param name="sourcePath"></param>
+        private void createExtractFile(string sourcePath)
+        {
+            string extractFilePath = setFilePath(sourcePath, reportFileType.Extract);
+
+            this.ExtractFilePath = extractFilePath;
+
+            //We create the result file and set the header
+            var extractHeader = new StringBuilder();
+            var header = "Type,FileName,FilePath,Created,Modified,Owner";
+            extractHeader.AppendLine(header);
+            File.WriteAllText(extractFilePath, extractHeader.ToString(), Encoding.UTF8);
+        }
+
+        /// <summary>
+        /// Write an item processed to the extract csv file
+        /// </summary>
+        /// <param name="sourcePath"></param>
+        /// <param name="filemap"></param>
+        public void writeExtract(FileMapping filemap)
+        {
+            var csv = new StringBuilder();
+            string result = $"{filemap.ItemType},{filemap.Name},{filemap.Path},{filemap.Created},{filemap.Modified},{filemap.Owner}";
+            csv.AppendLine(result);
+            File.AppendAllText(this.ExtractFilePath, csv.ToString(), Encoding.UTF8);
         }
 
         /// <summary>
@@ -143,6 +179,14 @@ namespace SPOMig
                     //We ensure path exists
                     if (!Directory.Exists($"{appPath}/{appName}/Logs/")) Directory.CreateDirectory($"{appPath}/{appName}/Logs/");
                     return logFilePath;
+
+                case reportFileType.Extract:
+
+                    string extractFilePath = $"{appPath}/{appName}/Extracts/{FileName}.csv";
+                    //We ensure path exists
+                    if (!Directory.Exists($"{appPath}/{appName}/Extracts/")) Directory.CreateDirectory($"{appPath}/{appName}/Extracts/");
+                    return extractFilePath;
+
 
                 default:
 

@@ -600,42 +600,61 @@ namespace SPOMig
         /// <param name="e"></param>
         private void Btn_Copy_Click(object sender, RoutedEventArgs e)
         {
-            this.LocalPath = @Tb_LocalPath.Text;
-            this.DocLib = Cb_doclib.Text;
-            this.DeleteOldItems = (bool)Chbx_deleteItems.IsChecked;
-
-            #region UserInput checks
-            if (LocalPath == "")
+            if (Tb_LocalPath.Text.Contains(".csv"))
             {
-                MessageBox.Show("Please fill the local path field");
-                return;
+                this.DocLib = Cb_doclib.Text;
+                this.DeleteOldItems = (bool)Chbx_deleteItems.IsChecked;
+
+                if (!Directory.Exists(Tb_LocalPath.Text))
+                {
+                    MessageBox.Show("Cannot find local path, please double check");
+                    return;
+                }
+
+
+
             }
-            if (!Directory.Exists(LocalPath))
+            else
             {
-                MessageBox.Show("Cannot find local path, please double check");
-                return;
-            }
-            /*
-            if (Cb_doclib.SelectedItem == null)
-            {
-                MessageBox.Show("Please select a document library");
-                return;
-            }*/
-            #endregion
+                this.DocLib = Cb_doclib.Text;
+                this.DeleteOldItems = (bool)Chbx_deleteItems.IsChecked;
 
-            //UI update
-            Btn_Copy.IsEnabled = false;
-            Tb_LocalPath.IsEnabled = false;
-            Btn_Clean.IsEnabled = false;
-            Btn_Home.IsEnabled = false;
-            Cb_doclib.IsEnabled = false;
-            Chbx_deleteItems.IsEnabled = false;
-            Pb_progress.Value = 0;
-            Btn_Cancel.Visibility = Visibility.Visible;
-            Pb_progress.Visibility = Visibility.Visible;
 
-            //Run the BackgroundWorker
-            bw.RunWorkerAsync();  
+                this.LocalPath = @Tb_LocalPath.Text;
+
+                #region UserInput checks
+                if (LocalPath == "")
+                {
+                    MessageBox.Show("Please fill the local path field");
+                    return;
+                }
+                if (!Directory.Exists(LocalPath))
+                {
+                    MessageBox.Show("Cannot find local path, please double check");
+                    return;
+                }
+                /*
+                if (Cb_doclib.SelectedItem == null)
+                {
+                    MessageBox.Show("Please select a document library");
+                    return;
+                }*/
+                #endregion
+
+                //UI update
+                Btn_Copy.IsEnabled = false;
+                Tb_LocalPath.IsEnabled = false;
+                Btn_Clean.IsEnabled = false;
+                Btn_Home.IsEnabled = false;
+                Cb_doclib.IsEnabled = false;
+                Chbx_deleteItems.IsEnabled = false;
+                Pb_progress.Value = 0;
+                Btn_Cancel.Visibility = Visibility.Visible;
+                Pb_progress.Visibility = Visibility.Visible;
+
+                //Run the BackgroundWorker
+                bw.RunWorkerAsync();
+            }  
         }
 
         /// <summary>
@@ -689,5 +708,6 @@ namespace SPOMig
             this.IsEnabled = true;
 
         }
+
     }
 }

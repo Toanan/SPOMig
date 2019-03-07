@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SPOMig.Windows"
         mc:Ignorable="d"
-        Title="AppOnlyConfig" Height="240.193" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="" Height="240.193" Width="800" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <Label Name="Lb_Top" Content="This application is not yet configure for App Only authentication" Margin="135,18,76.6,148.4" />
         <Label Margin="489,18,185.6,148.4">
