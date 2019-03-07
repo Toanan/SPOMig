@@ -5,6 +5,7 @@ using Microsoft.SharePoint.Client;
 using System.IO;
 using System.ComponentModel;
 using SPOMig.Windows;
+using System.Threading.Tasks;
 
 namespace SPOMig
 {
@@ -188,7 +189,6 @@ namespace SPOMig
                         //We process the folder
                         CopyStatus copyStatus = ctx.copyFolderToSPO(folder, list, LocalPath, onlineListItem);
                                               
-
                         //[LOG:OK] Folder Creation
                         log.ActionStatus = CopyLog.Status.OK;
                         if (copyStatus != null)
@@ -222,6 +222,7 @@ namespace SPOMig
 
                     count++;
                     var myFolder = rootFolder.Folders.Add(folder.ItemUrls.ServerRelativeUrl);
+
                     if (count >= this.BatchRequestSize)
                     {
                         bw.ReportProgress(advancement, "Uploading folders batch");
